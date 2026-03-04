@@ -1,5 +1,6 @@
 import fastifyAccepts from '@fastify/accepts'
 import fastifyCors, { type FastifyCorsOptions } from '@fastify/cors'
+import fastifyWebSocket from '@fastify/websocket'
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown'
 import fastifyPlugin from 'fastify-plugin'
@@ -30,6 +31,7 @@ const plugins: FastifyPluginAsync = fastifyPlugin(
     if (config.jwtSecret) {
       await registerPlugin(fastify, 'jwt', jwtPlugin)
     }
+    await registerPlugin(fastify, 'websocket', fastifyWebSocket)
     await registerPlugin<FastifyCorsOptions>(fastify, 'cors', fastifyCors, {
       origin: config.corsOrigin,
       credentials: true,

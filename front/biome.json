@@ -1,0 +1,90 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json",
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":NODE:",
+              ":PACKAGE:",
+              ":BLANK_LINE:",
+              ":ALIAS:",
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
+      },
+      "correctness": {
+        "noUndeclaredVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedPrivateClassMembers": "error",
+        "noUnusedVariables": "error"
+      },
+      "style": {
+        "noNamespace": "error",
+        "noNegationElse": "error",
+        "noParameterProperties": "error",
+        "noShoutyConstants": "error",
+        "useBlockStatements": "error",
+        "useCollapsedElseIf": "error",
+        "useConsistentArrayType": "error",
+        "useFilenamingConvention": {
+          "level": "off",
+          "options": {
+            "requireAscii": true,
+            "filenameCases": ["kebab-case"]
+          }
+        },
+        "useForOf": "error",
+        "useShorthandAssign": "error"
+      },
+      "suspicious": {
+        "noEmptyBlockStatements": "error",
+        "useAwait": "error"
+      },
+      "performance": {
+        "noBarrelFile": "error",
+        "noReExportAll": "error"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "quoteStyle": "single"
+    },
+    "globals": [
+      "jest",
+      "describe",
+      "test",
+      "expect",
+      "beforeAll",
+      "beforeEach",
+      "afterAll",
+      "afterEach",
+      "CustomMatcherResult",
+      "ErrorHandler",
+      "ErrorMatcherOptions"
+    ]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
+}

@@ -1,0 +1,16 @@
+export const SOIGNANTS = [
+  { name: 'Médecin' },
+  { name: 'IDE' },
+  { name: 'IDE SSR' },
+  { name: 'IDE Educ1' },
+  { name: 'IDE Educ2' },
+  { name: 'IDE Educ3' },
+  { name: 'Psychologue' },
+  { name: 'Pharmacienne' },
+  { name: 'Aide-soignante' },
+  { name: 'Diététicienne' },
+  { name: 'Kiné1' },
+  { name: 'Kiné2' },
+  { name: 'APA' },
+  { name: 'SSR' },
+]

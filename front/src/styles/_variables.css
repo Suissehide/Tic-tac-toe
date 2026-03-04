@@ -1,0 +1,5 @@
+@layer base {
+  :root {
+    --radius-md: 0.3rem;
+  }
+}

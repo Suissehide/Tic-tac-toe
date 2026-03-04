@@ -1,0 +1,30 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type 'yes' to deploy"
+        required: true
+        default: "no"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "yes" ]; then
+            echo "Deployment cancelled"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy with Docker Compose
+        working-directory: deploy
+        run: |
+          docker compose --profile backend --profile db --profile frontend up -d --build --remove-orphans
+          docker compose ps

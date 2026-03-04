@@ -1,0 +1,16 @@
+.github/
+.husky/
+.idea/
+.npm/
+.swc/
+.vscode/
+.wireit/
+dist/
+lib/
+load-tests/
+node_modules/
+sonar/
+tmp/
+
+**/.swc/
+**/tsconfig.tsbuildinfo

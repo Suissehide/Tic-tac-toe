@@ -42,3 +42,12 @@ describe('generateRoomCode', () => {
     expect(code).toMatch(/^[A-Z0-9]{6}$/)
   })
 })
+
+describe('nextTurn', () => {
+  it('returns O when current is X', () => {
+    expect(nextTurn('X')).toBe('O')
+  })
+  it('returns X when current is O', () => {
+    expect(nextTurn('O')).toBe('X')
+  })
+})

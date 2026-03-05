@@ -28,7 +28,7 @@ function HomePage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const playerId = getOrCreatePlayerId()
+  const [playerId] = useState(() => getOrCreatePlayerId())
 
   const handleCreate = async () => {
     if (!pseudo.trim()) { setError('Saisis un pseudo'); return }

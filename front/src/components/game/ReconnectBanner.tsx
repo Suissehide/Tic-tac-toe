@@ -11,7 +11,13 @@ export function ReconnectBanner({ pseudo, initialSeconds }: ReconnectBannerProps
   useEffect(() => {
     setSecondsLeft(initialSeconds)
     const interval = setInterval(() => {
-      setSecondsLeft((s) => Math.max(0, s - 1))
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          clearInterval(interval)
+          return 0
+        }
+        return s - 1
+      })
     }, 1000)
     return () => clearInterval(interval)
   }, [initialSeconds])

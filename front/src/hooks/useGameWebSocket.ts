@@ -27,6 +27,10 @@ export function useGameWebSocket() {
       console.error('WebSocket error')
     }
 
+    ws.onclose = () => {
+      clearInterval(pingInterval)
+    }
+
     // Keepalive ping every 25s
     const pingInterval = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {

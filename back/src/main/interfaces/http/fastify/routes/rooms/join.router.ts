@@ -28,14 +28,10 @@ export const joinRoomRouter: FastifyPluginAsync = async (fastify) => {
 
     if (!spectator) {
       const player = roomStore.joinAsPlayer(room, playerId, pseudo)
-      const players: Record<string, string> = {}
-      for (const p of room.players) {
-        players[p.mark] = p.pseudo
-      }
       return reply.send({
         role: player.mark,
         roomCode: code,
-        players,
+        players: Object.fromEntries(room.players.map((p) => [p.mark, p.pseudo])),
         status: room.status,
       })
     }

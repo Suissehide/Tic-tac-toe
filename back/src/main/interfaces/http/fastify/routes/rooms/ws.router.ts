@@ -88,7 +88,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
         roomStore.broadcast(room, { type: 'game:start', board: room.board, turn: room.currentTurn, players })
       }
 
-      socket.on('message', (raw) => {
+      socket.on('message', (raw: Buffer) => {
         let msg: ClientMessage
         try {
           msg = JSON.parse(raw.toString())

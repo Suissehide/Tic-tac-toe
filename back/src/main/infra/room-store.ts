@@ -52,7 +52,7 @@ export class RoomStore {
     const existing = room.players.find((p) => p.id === playerId)
     if (existing) return existing
 
-    const mark: Mark = room.players[0].mark === 'X' ? 'O' : 'X'
+    const mark: Mark = room.players[0]?.mark === 'X' ? 'O' : 'X'
     const player: Player = { id: playerId, pseudo, mark, ws: null, connected: false }
     room.players.push(player)
     return player

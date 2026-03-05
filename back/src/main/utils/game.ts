@@ -12,7 +12,7 @@ export function createBoard(): Board {
 
 export function checkWin(board: Board, mark: Mark): number[] | null {
   for (const line of WIN_LINES) {
-    if (line.every((i) => board[i] === mark)) return line
+    if (line.every((i) => board[i] === mark)) return [...line]
   }
   return null
 }

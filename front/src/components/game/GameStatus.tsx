@@ -22,47 +22,73 @@ export function GameStatusBar({
   onRematch,
 }: GameStatusProps) {
   const isSpectator = role === 'spectator'
+  const isMyTurn = !isSpectator && turn === myMark
 
   return (
-    <div className="text-center space-y-2">
+    <div className="flex flex-col items-center gap-3 min-h-[5rem]">
       {status === 'waiting' && (
-        <p className="text-muted-foreground animate-pulse">En attente d'un adversaire...</p>
+        <div className="flex items-center gap-2">
+          <span className="status-waiting animate-pulse">
+            EN ATTENTE D'UN ADVERSAIRE
+          </span>
+          <span className="inline-flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </span>
+        </div>
       )}
 
       {status === 'playing' && turn && (
-        <p className="font-medium">
-          Tour de :{' '}
-          <span className={turn === 'X' ? 'text-blue-500' : 'text-rose-500'}>
-            {players[turn]} ({turn})
-          </span>
-          {!isSpectator && turn === myMark && ' — À toi !'}
-        </p>
+        <div className="flex flex-col items-center gap-1">
+          <p className="status-turn">
+            <span style={{ color: turn === 'X' ? 'var(--x-color)' : 'var(--o-color)' }}>
+              {players[turn] || turn}
+            </span>
+            {isMyTurn ? (
+              <span className="text-foreground/50 text-base font-normal" style={{ fontFamily: 'Space Mono', fontSize: '0.75rem', marginLeft: '0.5rem', letterSpacing: '0.1em' }}>
+                — TON TOUR
+              </span>
+            ) : !isSpectator ? (
+              <span className="text-foreground/30 text-base font-normal" style={{ fontFamily: 'Space Mono', fontSize: '0.75rem', marginLeft: '0.5rem', letterSpacing: '0.1em' }}>
+                joue...
+              </span>
+            ) : null}
+          </p>
+        </div>
       )}
 
       {status === 'finished' && winner && (
-        <div className="space-y-2">
+        <div className="flex flex-col items-center gap-3">
           {winner === 'draw' ? (
-            <p className="font-bold text-lg">Match nul !</p>
+            <p className="status-winner" style={{ color: 'var(--foreground)' }}>
+              MATCH NUL
+            </p>
           ) : (
-            <p className="font-bold text-lg">
-              {players[winner]} ({winner}) a gagné !
+            <p className="status-winner" style={{ color: winner === 'X' ? 'var(--x-color)' : 'var(--o-color)' }}>
+              {players[winner] || winner} GAGNE
             </p>
           )}
           {!isSpectator && (
             <button
               type="button"
               onClick={onRematch}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
+              className="game-btn game-btn--ghost"
             >
-              Revanche
+              REVANCHE
             </button>
           )}
         </div>
       )}
 
       {spectatorCount > 0 && (
-        <p className="text-xs text-muted-foreground">
-          👁 {spectatorCount} spectateur{spectatorCount > 1 ? 's' : ''}
+        <p className="label-mono flex items-center gap-1.5" style={{ marginTop: status === 'waiting' ? 0 : undefined }}>
+          <span>👁</span>
+          <span>{spectatorCount} SPECTATEUR{spectatorCount > 1 ? 'S' : ''}</span>
         </p>
       )}
     </div>

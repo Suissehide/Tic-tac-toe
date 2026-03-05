@@ -1,7 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { createRoom, joinRoom } from '../api/game.api'
 import { useGameStore } from '../store/useGameStore'
 
@@ -27,7 +25,6 @@ function HomePage() {
   const [joinCode, setJoinCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
   const [playerId] = useState(() => getOrCreatePlayerId())
 
   const handleCreate = async () => {
@@ -80,50 +77,131 @@ function HomePage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <div className="w-full max-w-sm space-y-6 p-8 rounded-2xl border bg-card shadow-sm">
-        <h1 className="text-3xl font-bold text-center">Tic-tac-toe</h1>
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ background: 'var(--background)' }}>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Pseudo</label>
-          <Input
-            placeholder="Ton pseudo"
+      {/* Background decorative board */}
+      <div
+        className="fixed inset-0 flex items-center justify-center pointer-events-none select-none"
+        aria-hidden
+        style={{ opacity: 0.025 }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '6px',
+            background: '#fff',
+            padding: '6px',
+            width: 'min(80vw, 80vh)',
+            height: 'min(80vw, 80vh)',
+          }}
+        >
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} style={{ background: 'var(--background)' }} />
+          ))}
+        </div>
+      </div>
+
+      <div className="w-full max-w-xs relative z-10">
+
+        {/* Title */}
+        <div className="mb-10 appear-1">
+          <h1
+            className="leading-none select-none"
+            style={{
+              fontFamily: 'Russo One, sans-serif',
+              fontSize: 'clamp(3.5rem, 15vw, 5rem)',
+              color: 'var(--foreground)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            TIC<br />
+            <span style={{ color: 'var(--x-color)' }}>TAC</span><br />
+            TOE
+          </h1>
+          <p className="label-mono mt-3">MULTIJOUEUR · TEMPS RÉEL · ANONYME</p>
+        </div>
+
+        {/* Pseudo */}
+        <div className="mb-5 appear-2">
+          <label className="label-mono block mb-2">TON PSEUDO</label>
+          <input
+            className="game-input"
+            placeholder="Entrer un pseudo…"
             value={pseudo}
-            onChange={(e) => setPseudo(e.target.value)}
             maxLength={20}
+            onChange={(e) => setPseudo(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
           />
         </div>
 
-        <Button className="w-full" onClick={handleCreate} disabled={loading}>
-          Créer une partie
-        </Button>
-
-        <div className="relative flex items-center gap-2">
-          <div className="flex-1 border-t" />
-          <span className="text-xs text-muted-foreground">ou</span>
-          <div className="flex-1 border-t" />
+        {/* Create button */}
+        <div className="mb-8 appear-3">
+          <button
+            type="button"
+            className="game-btn game-btn--primary w-full"
+            onClick={handleCreate}
+            disabled={loading}
+          >
+            {loading ? '…' : 'CRÉER UNE PARTIE →'}
+          </button>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Code de room</label>
-          <Input
+        {/* Divider */}
+        <div className="flex items-center gap-3 mb-6 appear-4">
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          <span className="label-mono">OU</span>
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+        </div>
+
+        {/* Join code */}
+        <div className="mb-4 appear-4">
+          <label className="label-mono block mb-2">CODE DE ROOM</label>
+          <input
+            className="game-input game-input--mono"
             placeholder="ABC123"
             value={joinCode}
-            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
             maxLength={6}
+            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
           />
         </div>
 
-        <div className="flex gap-2">
-          <Button className="flex-1" onClick={handleJoin} disabled={loading}>
-            Rejoindre
-          </Button>
-          <Button variant="outline" onClick={handleSpectate} disabled={loading}>
-            Observer
-          </Button>
+        {/* Join + Spectate */}
+        <div className="flex gap-2 appear-5">
+          <button
+            type="button"
+            className="game-btn game-btn--danger flex-1"
+            onClick={handleJoin}
+            disabled={loading}
+          >
+            REJOINDRE
+          </button>
+          <button
+            type="button"
+            className="game-btn game-btn--ghost"
+            onClick={handleSpectate}
+            disabled={loading}
+            title="Observer la partie"
+          >
+            👁 OBS.
+          </button>
         </div>
 
-        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+        {/* Error */}
+        {error && (
+          <p
+            className="mt-4 appear-1"
+            style={{
+              fontFamily: 'Space Mono, monospace',
+              fontSize: '0.7rem',
+              letterSpacing: '0.08em',
+              color: 'var(--secondary)',
+            }}
+          >
+            ⚠ {error.toUpperCase()}
+          </p>
+        )}
       </div>
     </div>
   )

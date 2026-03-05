@@ -23,8 +23,16 @@ export function ReconnectBanner({ pseudo, initialSeconds }: ReconnectBannerProps
   }, [initialSeconds])
 
   return (
-    <div className="px-4 py-2 rounded-lg bg-yellow-100 border border-yellow-300 text-yellow-800 text-sm text-center">
-      <strong>{pseudo}</strong> s'est déconnecté — attente de reconnexion ({secondsLeft}s)...
+    <div className="reconnect-banner">
+      <div className="reconnect-timer">{secondsLeft}</div>
+      <div>
+        <p style={{ fontFamily: 'Space Mono', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--primary)', marginBottom: '0.2rem' }}>
+          RECONNEXION EN COURS
+        </p>
+        <p style={{ fontFamily: 'Manrope', fontSize: '0.85rem', color: '#A08040' }}>
+          <strong style={{ color: '#E0B060' }}>{pseudo}</strong> s'est déconnecté
+        </p>
+      </div>
     </div>
   )
 }

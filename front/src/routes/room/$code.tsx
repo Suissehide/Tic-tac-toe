@@ -34,6 +34,7 @@ function RoomPage() {
     moveHistory,
     disconnectedPlayer,
     rematchVotes,
+    scores,
     reset,
     setIdentity,
     setRoom,
@@ -128,6 +129,7 @@ function RoomPage() {
           mark="X"
           name={players.X}
           isActive={status === 'playing' && turn === 'X'}
+          score={scores.X}
         />
 
         <span className="label-mono" style={{ color: 'var(--border)' }}>
@@ -138,6 +140,7 @@ function RoomPage() {
           mark="O"
           name={players.O}
           isActive={status === 'playing' && turn === 'O'}
+          score={scores.O}
           reversed
         />
 

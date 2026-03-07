@@ -22,6 +22,7 @@ export interface GameState {
   moveHistory: MoveHistory
   disconnectedPlayer: { pseudo: string; secondsLeft: number } | null
   rematchVotes: Mark[]
+  scores: Record<Mark, number>
 }
 
 export interface GameActions {
@@ -32,16 +33,16 @@ export interface GameActions {
 }
 
 export type ServerMessage =
-  | { type: 'game:start'; board: string[]; turn: Mark; players: Record<Mark, string>; moveHistory: MoveHistory }
+  | { type: 'game:start'; board: string[]; turn: Mark; players: Record<Mark, string>; moveHistory: MoveHistory; scores: Record<Mark, number> }
   | { type: 'game:update'; board: string[]; turn: Mark; moveHistory: MoveHistory }
-  | { type: 'game:end'; winner: Mark | 'draw'; winLine: number[]; board: string[]; moveHistory: MoveHistory }
-  | { type: 'game:rematch'; board: string[]; turn: Mark; moveHistory: MoveHistory }
+  | { type: 'game:end'; winner: Mark | 'draw'; winLine: number[]; board: string[]; moveHistory: MoveHistory; scores: Record<Mark, number> }
+  | { type: 'game:rematch'; board: string[]; turn: Mark; moveHistory: MoveHistory; scores: Record<Mark, number> }
   | { type: 'game:rematch_vote'; mark: Mark }
   | { type: 'player:disconnected'; pseudo: string; reconnectDelay: number }
   | { type: 'player:reconnected'; pseudo: string }
   | { type: 'player:abandoned'; pseudo: string }
   | { type: 'spectator:count'; count: number }
-  | { type: 'room:state'; board: string[]; turn: Mark; players: Record<Mark, string>; status: GameStatus; winner: Mark | 'draw' | null; spectatorCount: number; moveHistory: MoveHistory }
+  | { type: 'room:state'; board: string[]; turn: Mark; players: Record<Mark, string>; status: GameStatus; winner: Mark | 'draw' | null; spectatorCount: number; moveHistory: MoveHistory; scores: Record<Mark, number> }
   | { type: 'error'; message: string }
 
 const initialState: GameState = {
@@ -59,6 +60,7 @@ const initialState: GameState = {
   moveHistory: { X: [], O: [] },
   disconnectedPlayer: null,
   rematchVotes: [],
+  scores: { X: 0, O: 0 },
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -73,19 +75,19 @@ export const useGameStore = create<GameState & GameActions>()(
       applyMessage: (msg) => {
         switch (msg.type) {
           case 'game:start':
-            set({ board: msg.board, turn: msg.turn, players: msg.players as { X: string; O: string }, status: 'playing', moveHistory: msg.moveHistory })
+            set({ board: msg.board, turn: msg.turn, players: msg.players as { X: string; O: string }, status: 'playing', moveHistory: msg.moveHistory, scores: msg.scores })
             break
           case 'game:update':
             set({ board: msg.board, turn: msg.turn, moveHistory: msg.moveHistory, disconnectedPlayer: null })
             break
           case 'game:end':
-            set({ board: msg.board, winner: msg.winner, winLine: msg.winLine, status: 'finished', moveHistory: msg.moveHistory, rematchVotes: [] })
+            set({ board: msg.board, winner: msg.winner, winLine: msg.winLine, status: 'finished', moveHistory: msg.moveHistory, rematchVotes: [], scores: msg.scores })
             break
           case 'game:rematch_vote':
             set((s) => ({ rematchVotes: s.rematchVotes.includes(msg.mark) ? s.rematchVotes : [...s.rematchVotes, msg.mark] }))
             break
           case 'game:rematch':
-            set({ board: msg.board, turn: msg.turn, status: 'playing', winner: null, winLine: [], moveHistory: msg.moveHistory, disconnectedPlayer: null, rematchVotes: [] })
+            set({ board: msg.board, turn: msg.turn, status: 'playing', winner: null, winLine: [], moveHistory: msg.moveHistory, disconnectedPlayer: null, rematchVotes: [], scores: msg.scores })
             break
           case 'player:disconnected':
             set({ disconnectedPlayer: { pseudo: msg.pseudo, secondsLeft: msg.reconnectDelay } })
@@ -108,6 +110,7 @@ export const useGameStore = create<GameState & GameActions>()(
               winner: msg.winner,
               spectatorCount: msg.spectatorCount,
               moveHistory: msg.moveHistory,
+              scores: msg.scores,
             })
             break
           case 'error':

@@ -35,6 +35,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
           winner: room.winner,
           spectatorCount: room.spectators.length,
           moveHistory: room.moveHistory,
+          scores: room.scores,
         })
 
         socket.on('close', () => {
@@ -67,8 +68,8 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
         roomStore.broadcast(room, { type: 'player:reconnected', pseudo: player.pseudo })
       }
 
-      // Send current game state to (re)connecting player
-      roomStore.send(socket, {
+      // Broadcast current game state to all connected players (so existing players see new/updated names)
+      roomStore.broadcast(room, {
         type: 'room:state',
         board: room.board,
         turn: room.currentTurn,
@@ -77,6 +78,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
         winner: room.winner,
         spectatorCount: room.spectators.length,
         moveHistory: room.moveHistory,
+        scores: room.scores,
       })
 
       // Start game when both players are connected
@@ -87,7 +89,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
       ) {
         room.status = 'playing'
         const players = Object.fromEntries(room.players.map((p) => [p.mark, p.pseudo])) as Record<Mark, string>
-        roomStore.broadcast(room, { type: 'game:start', board: room.board, turn: room.currentTurn, players, moveHistory: room.moveHistory })
+        roomStore.broadcast(room, { type: 'game:start', board: room.board, turn: room.currentTurn, players, moveHistory: room.moveHistory, scores: room.scores })
       }
 
       socket.on('message', (raw: Buffer) => {
@@ -136,7 +138,8 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
             roomStore.broadcast(room, { type: 'player:abandoned', pseudo: player.pseudo })
             if (opponent) {
               room.winner = opponent.mark
-              roomStore.broadcast(room, { type: 'game:end', winner: opponent.mark, winLine: [], board: room.board })
+              room.scores[opponent.mark]++
+              roomStore.broadcast(room, { type: 'game:end', winner: opponent.mark, winLine: [], board: room.board, moveHistory: room.moveHistory, scores: room.scores })
             }
             roomStore.scheduleCleanup(room)
           })
@@ -180,7 +183,8 @@ function handleMove(room: Room, player: Player, index: number, socket: WebSocket
     room.status = 'finished'
     room.winner = player.mark
     room.winLine = winLine
-    roomStore.broadcast(room, { type: 'game:end', winner: player.mark, winLine, board: room.board, moveHistory: room.moveHistory })
+    room.scores[player.mark]++
+    roomStore.broadcast(room, { type: 'game:end', winner: player.mark, winLine, board: room.board, moveHistory: room.moveHistory, scores: room.scores })
     roomStore.scheduleCleanup(room)
     return
   }
@@ -204,7 +208,7 @@ function handleRematch(room: Room, player: Player) {
       clearTimeout(room.cleanupTimer)
       room.cleanupTimer = null
     }
-    roomStore.broadcast(room, { type: 'game:rematch', board: room.board, turn: room.currentTurn, moveHistory: room.moveHistory })
+    roomStore.broadcast(room, { type: 'game:rematch', board: room.board, turn: room.currentTurn, moveHistory: room.moveHistory, scores: room.scores })
   } else {
     roomStore.broadcast(room, { type: 'game:rematch_vote', mark: player.mark })
   }

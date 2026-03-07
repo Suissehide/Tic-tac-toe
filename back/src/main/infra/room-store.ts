@@ -1,4 +1,4 @@
-import type { Room, Mark, Player, Spectator } from '../types/game/room'
+import type { Mark, Player, Room } from '../types/game/room'
 import { createBoard, generateRoomCode } from '../utils/game'
 
 const RECONNECT_DELAY_MS = 30_000
@@ -31,6 +31,7 @@ export class RoomStore {
       winner: null,
       winLine: null,
       moveHistory: { X: [], O: [] },
+      scores: { X: 0, O: 0 },
       reconnectTimers: new Map(),
       rematchVotes: new Set(),
       cleanupTimer: null,
@@ -45,21 +46,35 @@ export class RoomStore {
   }
 
   canJoinAsPlayer(room: Room, playerId: string): boolean {
-    if (room.players.some((p) => p.id === playerId)) return true
+    if (room.players.some((p) => p.id === playerId)) {
+      return true
+    }
     return room.players.length < 2
   }
 
   joinAsPlayer(room: Room, playerId: string, pseudo: string): Player {
     const existing = room.players.find((p) => p.id === playerId)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
 
     const mark: Mark = room.players[0]?.mark === 'X' ? 'O' : 'X'
-    const player: Player = { id: playerId, pseudo, mark, ws: null, connected: false }
+    const player: Player = {
+      id: playerId,
+      pseudo,
+      mark,
+      ws: null,
+      connected: false,
+    }
     room.players.push(player)
     return player
   }
 
-  scheduleReconnect(room: Room, playerId: string, onAbandoned: () => void): void {
+  scheduleReconnect(
+    room: Room,
+    playerId: string,
+    onAbandoned: () => void,
+  ): void {
     this.clearReconnectTimer(room, playerId)
     const timer = setTimeout(() => {
       room.reconnectTimers.delete(playerId)
@@ -77,7 +92,9 @@ export class RoomStore {
   }
 
   scheduleCleanup(room: Room): void {
-    if (room.cleanupTimer) clearTimeout(room.cleanupTimer)
+    if (room.cleanupTimer) {
+      clearTimeout(room.cleanupTimer)
+    }
     room.cleanupTimer = setTimeout(() => {
       this.deleteRoom(room.code)
     }, CLEANUP_DELAY_MS)
@@ -85,9 +102,15 @@ export class RoomStore {
 
   deleteRoom(code: string): void {
     const room = this.rooms.get(code)
-    if (!room) return
-    for (const timer of room.reconnectTimers.values()) clearTimeout(timer)
-    if (room.cleanupTimer) clearTimeout(room.cleanupTimer)
+    if (!room) {
+      return
+    }
+    for (const timer of room.reconnectTimers.values()) {
+      clearTimeout(timer)
+    }
+    if (room.cleanupTimer) {
+      clearTimeout(room.cleanupTimer)
+    }
     this.rooms.delete(code)
   }
 

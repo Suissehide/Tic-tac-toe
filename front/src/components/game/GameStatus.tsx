@@ -158,7 +158,7 @@ export function GameStatusBar({
               </button>
               {iVoted && !opponentVoted && (
                 <p
-                  className="font-mono text-[0.6rem] tracking-[0.1em]"
+                  className="font-mono text-[0.6rem] tracking-widest"
                   style={{ color: 'var(--text-light)', opacity: 0.5 }}
                 >
                   En attente de {players[opponentMark!] || opponentMark}

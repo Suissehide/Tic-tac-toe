@@ -4,6 +4,7 @@ interface PlayerBadgeProps {
   mark: Mark
   name: string
   isActive: boolean
+  score: number
   reversed?: boolean
 }
 
@@ -11,6 +12,7 @@ export function PlayerBadge({
   mark,
   name,
   isActive,
+  score,
   reversed = false,
 }: PlayerBadgeProps) {
   const color = mark === 'X' ? 'var(--x-color)' : 'var(--o-color)'
@@ -34,11 +36,21 @@ export function PlayerBadge({
     </span>
   )
 
+  const scoreLabel = (
+    <span
+      className="label-mono tabular-nums"
+      style={{ color, opacity: score > 0 ? 1 : 0.25, minWidth: '1ch', textAlign: 'center' }}
+    >
+      {score}
+    </span>
+  )
+
   return (
     <div className="flex items-center gap-1.5">
       {reversed ? (
         <>
           {dot}
+          {scoreLabel}
           {markLabel}
           {playerName}
         </>
@@ -46,6 +58,7 @@ export function PlayerBadge({
         <>
           {playerName}
           {markLabel}
+          {scoreLabel}
           {dot}
         </>
       )}

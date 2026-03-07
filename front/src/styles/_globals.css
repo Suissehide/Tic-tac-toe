@@ -44,9 +44,19 @@
   --color-board-line: var(--board-line);
   --color-board-cell: var(--board-cell);
 
-  --font-display: 'Russo One', sans-serif;
-  --font-mono: 'Space Mono', monospace;
-  --font-body: 'Manrope', sans-serif;
+  --font-display: "Russo One", sans-serif;
+  --font-mono: "Space Mono", monospace;
+  --font-body: "Manrope", sans-serif;
+
+  --animate-mark-pop: markPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-win-pulse: winPulse 1.2s ease-in-out infinite;
+  --animate-banner-slide: bannerSlide 0.3s ease forwards;
+  --animate-countdown-tick: countdownTick 1s ease-in-out infinite;
+  --animate-appear-1: slideUp 0.5s ease both;
+  --animate-appear-2: slideUp 0.5s 0.07s ease both;
+  --animate-appear-3: slideUp 0.5s 0.14s ease both;
+  --animate-appear-4: slideUp 0.5s 0.21s ease both;
+  --animate-appear-5: slideUp 0.5s 0.28s ease both;
 }
 
 * {
@@ -60,43 +70,75 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── ANIMATIONS ─────────────────────────────────────────── */
+/* ── KEYFRAMES ───────────────────────────────────────────── */
 
 @keyframes markPop {
-  0%   { transform: scale(0) rotate(-8deg); opacity: 0; }
-  55%  { transform: scale(1.12) rotate(2deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  0% {
+    transform: scale(0) rotate(-8deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.12) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(24px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes winPulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.65; }
-}
-
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
 }
 
 @keyframes bannerSlide {
-  from { transform: translateY(-8px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes countdownTick {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes vanishPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 
 /* ── GAME BOARD ──────────────────────────────────────────── */
@@ -104,6 +146,7 @@ body {
 .board-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   gap: 3px;
   background-color: var(--board-line);
   padding: 3px;
@@ -115,7 +158,19 @@ body {
   .board-grid {
     width: 360px;
     height: 360px;
+    grid-template-rows: repeat(3, 1fr);
   }
+}
+
+.board-cell-hint {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
 }
 
 .board-cell {
@@ -128,6 +183,11 @@ body {
   transition: background-color 0.12s ease;
   border: none;
   outline: none;
+  overflow: hidden;
+}
+
+.board-cell:active {
+  transform: none;
 }
 
 .board-cell--clickable {
@@ -153,7 +213,7 @@ body {
 /* ── MARKS ───────────────────────────────────────────────── */
 
 .board-mark {
-  font-family: 'Russo One', sans-serif;
+  font-family: "Russo One", sans-serif;
   font-size: 5rem;
   line-height: 1;
   user-select: none;
@@ -169,7 +229,6 @@ body {
 .board-mark--x {
   color: var(--x-color);
 }
-
 .board-mark--o {
   color: var(--o-color);
 }
@@ -179,121 +238,19 @@ body {
   filter: drop-shadow(0 0 16px currentColor);
 }
 
+.board-mark--vanish {
+  animation: vanishPulse 1.2s ease-in-out infinite;
+  filter: brightness(0.6);
+}
+
 .mark-animate {
   animation: markPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.board-cell-hint {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #2A2A2A;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
-}
-
-/* ── GAME INPUTS ─────────────────────────────────────────── */
-
-.game-input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid var(--border);
-  padding: 0.625rem 0;
-  color: var(--foreground);
-  font-family: 'Manrope', sans-serif;
-  font-size: 1.05rem;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.game-input:focus {
-  border-bottom-color: var(--primary);
-}
-
-.game-input::placeholder {
-  color: var(--text-light);
-}
-
-.game-input--mono {
-  font-family: 'Space Mono', monospace;
-  font-size: 1.4rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-}
-
-/* ── GAME BUTTONS ────────────────────────────────────────── */
-
-.game-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-family: 'Russo One', sans-serif;
-  font-size: 0.9rem;
-  letter-spacing: 0.06em;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  padding: 0.875rem 1.25rem;
-  line-height: 1;
-}
-
-.game-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.game-btn--primary {
-  background-color: var(--primary);
-  color: #000;
-}
-
-.game-btn--primary:not(:disabled):hover {
-  background-color: var(--primary-light);
-  transform: translateY(-1px);
-}
-
-.game-btn--primary:not(:disabled):active {
-  transform: translateY(0);
-}
-
-.game-btn--danger {
-  background-color: var(--secondary);
-  color: #fff;
-}
-
-.game-btn--danger:not(:disabled):hover {
-  background-color: #ff6070;
-  transform: translateY(-1px);
-}
-
-.game-btn--ghost {
-  background-color: transparent;
-  color: var(--muted-foreground);
-  border: 2px solid var(--border);
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-}
-
-.game-btn--ghost:not(:disabled):hover {
-  border-color: #3A3A3A;
-  color: var(--foreground);
-}
-
 /* ── UTILITY ─────────────────────────────────────────────── */
 
-.appear-1 { animation: slideUp 0.5s ease both; }
-.appear-2 { animation: slideUp 0.5s 0.07s ease both; }
-.appear-3 { animation: slideUp 0.5s 0.14s ease both; }
-.appear-4 { animation: slideUp 0.5s 0.21s ease both; }
-.appear-5 { animation: slideUp 0.5s 0.28s ease both; }
-
 .label-mono {
-  font-family: 'Space Mono', monospace;
+  font-family: "Space Mono", monospace;
   font-size: 0.6rem;
   letter-spacing: 0.2em;
   color: var(--text-light);
@@ -304,8 +261,8 @@ body {
 
 .reconnect-banner {
   animation: bannerSlide 0.3s ease forwards;
-  background: #1A1200;
-  border: 1px solid #3D2E00;
+  background: #1a1200;
+  border: 1px solid #3d2e00;
   border-left: 3px solid var(--primary);
   padding: 0.75rem 1rem;
   display: flex;
@@ -316,7 +273,7 @@ body {
 }
 
 .reconnect-timer {
-  font-family: 'Russo One', sans-serif;
+  font-family: "Russo One", sans-serif;
   font-size: 1.5rem;
   color: var(--primary);
   min-width: 2.5rem;
@@ -327,20 +284,42 @@ body {
 /* ── STATUS BAR ──────────────────────────────────────────── */
 
 .status-waiting {
-  font-family: 'Space Mono', monospace;
+  font-family: "Space Mono", monospace;
   font-size: 0.75rem;
   letter-spacing: 0.15em;
   color: var(--text-light);
 }
 
 .status-turn {
-  font-family: 'Russo One', sans-serif;
+  font-family: "Russo One", sans-serif;
   font-size: 1.15rem;
   letter-spacing: 0.04em;
 }
 
 .status-winner {
-  font-family: 'Russo One', sans-serif;
+  font-family: "Russo One", sans-serif;
   font-size: 1.5rem;
   letter-spacing: 0.04em;
+}
+
+.status-hint {
+  font-family: "Space Mono", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+/* ── TYPOGRAPHY ──────────────────────────────────────────── */
+
+.player-name {
+  font-family: "Russo One", sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+
+.room-code {
+  font-family: "Space Mono", monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.25em;
+  color: var(--x-color);
+  transition: opacity 0.15s;
 }

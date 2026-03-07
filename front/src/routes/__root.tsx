@@ -1,5 +1,6 @@
-import { Outlet, createRootRoute } from '@tanstack/react-router'
+import { createRootRoute, Outlet } from '@tanstack/react-router'
 import React from 'react'
+
 import { environment } from '../constants/config.constant.ts'
 
 const TanStackRouterDevtools =

@@ -30,6 +30,7 @@ export class RoomStore {
       status: 'waiting',
       winner: null,
       winLine: null,
+      moveHistory: { X: [], O: [] },
       reconnectTimers: new Map(),
       rematchVotes: new Set(),
       cleanupTimer: null,

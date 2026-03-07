@@ -1,11 +1,11 @@
-import { cva } from 'class-variance-authority'
+import { cva, type VariantProps } from 'class-variance-authority'
 import { Check, ChevronDown, X } from 'lucide-react'
 import { Select as RadixUiSelect } from 'radix-ui'
 import React from 'react'
 
 import { cn } from '../../libs/utils.ts'
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {}
 interface TextAreaProps
   extends React.InputHTMLAttributes<HTMLTextAreaElement> {}
 export interface SelectProps extends RadixUiSelect.SelectProps {
@@ -20,14 +20,28 @@ interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 export const inputVariants = cva(
   'flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 mb-0 text-sm transition-colors ' +
     'file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: '',
+        game:
+          'bg-transparent border-0 border-b-2 border-border h-auto rounded-none px-0 py-2.5 font-body text-[1.05rem] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary placeholder:text-text-light',
+        'game-mono':
+          'bg-transparent border-0 border-b-2 border-border h-auto rounded-none px-0 py-2.5 font-mono text-[1.4rem] tracking-[0.25em] uppercase shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary placeholder:text-text-light',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+    },
+  },
 )
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, variant, ...props }, ref) => {
     return (
       <input
         type={type}
-        className={cn(inputVariants(), className)}
+        className={cn(inputVariants({ variant }), className)}
         ref={ref}
         {...props}
       />

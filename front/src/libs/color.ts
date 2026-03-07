@@ -15,9 +15,9 @@ export function parseRGBA(rgbaStr: string): string {
 
   const [, r, g, b, a] = match
   return rgbaToHex(
-    Number.parseInt(r),
-    Number.parseInt(g),
-    Number.parseInt(b),
+    Number.parseInt(r, 10),
+    Number.parseInt(g, 10),
+    Number.parseInt(b, 10),
     a !== undefined ? Number.parseFloat(a) : 1,
   )
 }

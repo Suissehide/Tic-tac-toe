@@ -1,13 +1,16 @@
 import { useEffect, useRef } from 'react'
+
 import { getWsUrl } from '../api/game.api'
-import { useGameStore, type ServerMessage } from '../store/useGameStore'
+import { type ServerMessage, useGameStore } from '../store/useGameStore'
 
 export function useGameWebSocket() {
   const wsRef = useRef<WebSocket | null>(null)
   const { roomCode, playerId, pseudo, role, applyMessage } = useGameStore()
 
   useEffect(() => {
-    if (!roomCode || !playerId) return
+    if (!roomCode || !playerId) {
+      return
+    }
 
     const spectator = role === 'spectator'
     const url = getWsUrl(roomCode, playerId, pseudo, spectator)

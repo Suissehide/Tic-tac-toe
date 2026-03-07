@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import type { WebSocket } from '@fastify/websocket'
 import { roomStore } from '../../../../../infra/room-store'
 import type { Room, Player, Mark, ClientMessage } from '../../../../../types/game/room'
-import { checkWin, checkDraw, nextTurn, createBoard } from '../../../../../utils/game'
+import { checkWin, nextTurn, createBoard } from '../../../../../utils/game'
 
 export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
   fastify.get<{
@@ -34,6 +34,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
           status: room.status,
           winner: room.winner,
           spectatorCount: room.spectators.length,
+          moveHistory: room.moveHistory,
         })
 
         socket.on('close', () => {
@@ -75,6 +76,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
         status: room.status,
         winner: room.winner,
         spectatorCount: room.spectators.length,
+        moveHistory: room.moveHistory,
       })
 
       // Start game when both players are connected
@@ -85,7 +87,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
       ) {
         room.status = 'playing'
         const players = Object.fromEntries(room.players.map((p) => [p.mark, p.pseudo])) as Record<Mark, string>
-        roomStore.broadcast(room, { type: 'game:start', board: room.board, turn: room.currentTurn, players })
+        roomStore.broadcast(room, { type: 'game:start', board: room.board, turn: room.currentTurn, players, moveHistory: room.moveHistory })
       }
 
       socket.on('message', (raw: Buffer) => {
@@ -134,7 +136,7 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
             roomStore.broadcast(room, { type: 'player:abandoned', pseudo: player.pseudo })
             if (opponent) {
               room.winner = opponent.mark
-              roomStore.broadcast(room, { type: 'game:end', winner: opponent.mark, winLine: [] })
+              roomStore.broadcast(room, { type: 'game:end', winner: opponent.mark, winLine: [], board: room.board })
             }
             roomStore.scheduleCleanup(room)
           })
@@ -163,31 +165,32 @@ function handleMove(room: Room, player: Player, index: number, socket: WebSocket
     return
   }
 
+  // Vanishing rule: if player already has 3 pieces, remove the oldest before placing
+  if (room.moveHistory[player.mark].length >= 3) {
+    const oldestIndex = room.moveHistory[player.mark].shift()!
+    room.board[oldestIndex] = ''
+  }
+
   room.board[index] = player.mark
+  room.moveHistory[player.mark].push(index)
+
   const winLine = checkWin(room.board, player.mark)
 
   if (winLine) {
     room.status = 'finished'
     room.winner = player.mark
     room.winLine = winLine
-    roomStore.broadcast(room, { type: 'game:end', winner: player.mark, winLine })
-    roomStore.scheduleCleanup(room)
-    return
-  }
-
-  if (checkDraw(room.board)) {
-    room.status = 'finished'
-    room.winner = 'draw'
-    roomStore.broadcast(room, { type: 'game:end', winner: 'draw', winLine: [] })
+    roomStore.broadcast(room, { type: 'game:end', winner: player.mark, winLine, board: room.board, moveHistory: room.moveHistory })
     roomStore.scheduleCleanup(room)
     return
   }
 
   room.currentTurn = nextTurn(room.currentTurn)
-  roomStore.broadcast(room, { type: 'game:update', board: room.board, turn: room.currentTurn })
+  roomStore.broadcast(room, { type: 'game:update', board: room.board, turn: room.currentTurn, moveHistory: room.moveHistory })
 }
 
 function handleRematch(room: Room, player: Player) {
+  if (room.rematchVotes.has(player.id)) return
   room.rematchVotes.add(player.id)
   if (room.rematchVotes.size === 2) {
     room.board = createBoard()
@@ -195,11 +198,14 @@ function handleRematch(room: Room, player: Player) {
     room.status = 'playing'
     room.winner = null
     room.winLine = null
+    room.moveHistory = { X: [], O: [] }
     room.rematchVotes.clear()
     if (room.cleanupTimer) {
       clearTimeout(room.cleanupTimer)
       room.cleanupTimer = null
     }
-    roomStore.broadcast(room, { type: 'game:rematch', board: room.board, turn: room.currentTurn })
+    roomStore.broadcast(room, { type: 'game:rematch', board: room.board, turn: room.currentTurn, moveHistory: room.moveHistory })
+  } else {
+    roomStore.broadcast(room, { type: 'game:rematch_vote', mark: player.mark })
   }
 }

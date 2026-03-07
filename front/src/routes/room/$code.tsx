@@ -1,11 +1,15 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Check, Clipboard, Eye, LogOut } from 'lucide-react'
 import { useEffect, useState } from 'react'
+
 import { Board } from '../../components/game/Board'
 import { GameStatusBar } from '../../components/game/GameStatus'
+import { PlayerBadge } from '../../components/game/PlayerBadge'
 import { ReconnectBanner } from '../../components/game/ReconnectBanner'
+import { Button } from '../../components/ui/button'
 import { useGameWebSocket } from '../../hooks/useGameWebSocket'
+import type { Mark, Role } from '../../store/useGameStore'
 import { useGameStore } from '../../store/useGameStore'
-import type { Mark } from '../../store/useGameStore'
 
 export const Route = createFileRoute('/room/$code')({
   component: RoomPage,
@@ -27,17 +31,36 @@ function RoomPage() {
     spectatorCount,
     winner,
     winLine,
+    moveHistory,
     disconnectedPlayer,
+    rematchVotes,
     reset,
+    setIdentity,
+    setRoom,
   } = useGameStore()
 
   const { sendMove, sendRematch } = useGameWebSocket()
 
   useEffect(() => {
-    if (!roomCode || roomCode !== code) {
+    if (roomCode && roomCode === code) {
+      return
+    }
+
+    const savedPlayerId = localStorage.getItem('ttt-player-id')
+    const savedPseudo = localStorage.getItem('ttt-pseudo')
+    const savedRole = localStorage.getItem('ttt-room-role') as Role | null
+
+    if (
+      savedPlayerId &&
+      savedPseudo &&
+      (savedRole === 'X' || savedRole === 'O' || savedRole === 'spectator')
+    ) {
+      setIdentity(savedPseudo, savedPlayerId)
+      setRoom(code, savedRole)
+    } else {
       void navigate({ to: '/' })
     }
-  }, [roomCode, code, navigate])
+  }, [roomCode, code, navigate, setIdentity, setRoom])
 
   const copyCode = async () => {
     await navigator.clipboard.writeText(code)
@@ -46,6 +69,7 @@ function RoomPage() {
   }
 
   const handleLeave = () => {
+    localStorage.removeItem('ttt-room-role')
     reset()
     void navigate({ to: '/' })
   }
@@ -55,15 +79,9 @@ function RoomPage() {
   const isBlocked = !!disconnectedPlayer || !isMyTurn
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ background: 'var(--background)', color: 'var(--foreground)' }}
-    >
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* ── Top bar ─────────────────────────────────────── */}
-      <header
-        className="flex items-center justify-between px-5 py-3 appear-1"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
+      <header className="flex items-center justify-between px-5 py-3 border-b border-border animate-appear-1">
         {/* Room code */}
         <button
           type="button"
@@ -72,105 +90,71 @@ function RoomPage() {
           title="Copier le code"
         >
           <span className="label-mono">ROOM</span>
+          <span className="room-code group-hover:opacity-70">{code}</span>
           <span
+            className="label-mono transition-all duration-200 flex items-center gap-1 px-2 py-[0.2rem]"
             style={{
-              fontFamily: 'Space Mono, monospace',
-              fontSize: '1.1rem',
-              letterSpacing: '0.25em',
-              color: 'var(--x-color)',
-              transition: 'opacity 0.15s',
-            }}
-            className="group-hover:opacity-70"
-          >
-            {code}
-          </span>
-          <span
-            className="label-mono transition-all duration-200"
-            style={{
-              padding: '0.2rem 0.5rem',
               background: copied ? '#1A2400' : 'var(--muted)',
               color: copied ? '#6ECC00' : 'var(--text-light)',
               border: `1px solid ${copied ? '#3A5000' : 'var(--border)'}`,
             }}
           >
-            {copied ? '✓ COPIÉ' : 'COPIER'}
+            {copied ? (
+              <>
+                <Check size={10} /> COPIÉ
+              </>
+            ) : (
+              <>
+                <Clipboard size={10} /> COPIER
+              </>
+            )}
           </span>
         </button>
 
         {/* Leave */}
-        <button
+        <Button
           type="button"
-          className="game-btn game-btn--ghost"
-          style={{ padding: '0.3rem 0.75rem', fontSize: '0.6rem' }}
+          variant="game-ghost"
+          className="px-3 py-1.5 text-[0.6rem]"
           onClick={handleLeave}
         >
-          QUITTER
-        </button>
+          <LogOut size={12} /> QUITTER
+        </Button>
       </header>
 
       {/* ── Players bar ─────────────────────────────────── */}
-      <div
-        className="flex items-center gap-3 px-5 py-2.5 appear-2"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
-        {/* X player */}
-        <div className="flex items-center gap-1.5">
-          <span
-            style={{
-              fontFamily: 'Russo One, sans-serif',
-              fontSize: '0.95rem',
-              color: 'var(--x-color)',
-              letterSpacing: '0.03em',
-            }}
-          >
-            {players.X || '?'}
-          </span>
-          <span className="label-mono" style={{ color: 'var(--x-color)', opacity: 0.5 }}>X</span>
-          {status === 'playing' && turn === 'X' && (
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: 'var(--x-color)' }}
-            />
-          )}
-        </div>
+      <div className="flex items-center gap-3 px-5 py-2.5 border-b border-border animate-appear-2">
+        <PlayerBadge
+          mark="X"
+          name={players.X}
+          isActive={status === 'playing' && turn === 'X'}
+        />
 
-        <span className="label-mono" style={{ color: 'var(--border)' }}>VS</span>
+        <span className="label-mono" style={{ color: 'var(--border)' }}>
+          VS
+        </span>
 
-        {/* O player */}
-        <div className="flex items-center gap-1.5">
-          {status === 'playing' && turn === 'O' && (
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: 'var(--o-color)' }}
-            />
-          )}
-          <span className="label-mono" style={{ color: 'var(--o-color)', opacity: 0.5 }}>O</span>
-          <span
-            style={{
-              fontFamily: 'Russo One, sans-serif',
-              fontSize: '0.95rem',
-              color: 'var(--o-color)',
-              letterSpacing: '0.03em',
-            }}
-          >
-            {players.O || '?'}
-          </span>
-        </div>
+        <PlayerBadge
+          mark="O"
+          name={players.O}
+          isActive={status === 'playing' && turn === 'O'}
+          reversed
+        />
 
-        {/* Spectators */}
         {spectatorCount > 0 && (
-          <span className="label-mono ml-auto" style={{ color: 'var(--text-light)' }}>
-            👁 {spectatorCount}
+          <span
+            className="label-mono ml-auto flex items-center gap-1"
+            style={{ color: 'var(--text-light)' }}
+          >
+            <Eye size={11} /> {spectatorCount}
           </span>
         )}
       </div>
 
       {/* ── Main game area ──────────────────────────────── */}
       <main className="flex-1 flex flex-col items-center justify-center gap-6 px-4 py-8">
-
-        {/* Reconnect banner */}
         {disconnectedPlayer && (
-          <div className="appear-1">
+          <div className="animate-appear-1">
             <ReconnectBanner
               pseudo={disconnectedPlayer.pseudo}
               initialSeconds={disconnectedPlayer.secondsLeft}
@@ -178,11 +162,11 @@ function RoomPage() {
           </div>
         )}
 
-        {/* Board */}
-        <div className="appear-2">
+        <div className="animate-appear-2">
           <Board
             board={board}
             winLine={winLine}
+            moveHistory={moveHistory}
             onCellClick={sendMove}
             disabled={isBlocked || role === 'spectator'}
             myMark={myMark}
@@ -190,8 +174,7 @@ function RoomPage() {
           />
         </div>
 
-        {/* Status */}
-        <div className="appear-3">
+        <div className="animate-appear-3">
           <GameStatusBar
             status={status}
             turn={turn}
@@ -200,25 +183,30 @@ function RoomPage() {
             role={role}
             myMark={myMark}
             spectatorCount={0}
+            rematchVotes={rematchVotes}
             onRematch={sendRematch}
           />
         </div>
       </main>
 
       {/* ── Footer ─────────────────────────────────────── */}
-      <footer
-        className="flex items-center justify-center gap-2 px-5 py-3"
-        style={{ borderTop: '1px solid var(--border)' }}
-      >
+      <footer className="flex items-center justify-center gap-2 px-5 py-3 border-t border-border">
         {pseudo && (
           <p className="label-mono" style={{ color: 'var(--text-light)' }}>
             {pseudo}
             {myMark && (
-              <span style={{ color: myMark === 'X' ? 'var(--x-color)' : 'var(--o-color)', marginLeft: '0.5rem' }}>
+              <span
+                style={{
+                  color: myMark === 'X' ? 'var(--x-color)' : 'var(--o-color)',
+                  marginLeft: '0.5rem',
+                }}
+              >
                 ({myMark})
               </span>
             )}
-            {role === 'spectator' && <span style={{ marginLeft: '0.5rem' }}>· SPECTATEUR</span>}
+            {role === 'spectator' && (
+              <span style={{ marginLeft: '0.5rem' }}>· SPECTATEUR</span>
+            )}
           </p>
         )}
       </footer>

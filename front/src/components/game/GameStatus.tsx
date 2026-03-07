@@ -1,4 +1,6 @@
-import type { Mark, GameStatus, Role } from '../../store/useGameStore'
+import { Eye } from 'lucide-react'
+
+import type { GameStatus, Mark, Role } from '../../store/useGameStore'
 
 interface GameStatusProps {
   status: GameStatus
@@ -8,6 +10,7 @@ interface GameStatusProps {
   role: Role
   myMark: Mark | null
   spectatorCount: number
+  rematchVotes: Mark[]
   onRematch: () => void
 }
 
@@ -19,13 +22,19 @@ export function GameStatusBar({
   role,
   myMark,
   spectatorCount,
+  rematchVotes,
   onRematch,
 }: GameStatusProps) {
   const isSpectator = role === 'spectator'
   const isMyTurn = !isSpectator && turn === myMark
+  const iVoted = myMark !== null && rematchVotes.includes(myMark)
+  const opponentMark: Mark | null =
+    myMark === 'X' ? 'O' : myMark === 'O' ? 'X' : null
+  const opponentVoted =
+    opponentMark !== null && rematchVotes.includes(opponentMark)
 
   return (
-    <div className="flex flex-col items-center gap-3 min-h-[5rem]">
+    <div className="flex flex-col items-center gap-3 min-h-20">
       {status === 'waiting' && (
         <div className="flex items-center gap-2">
           <span className="status-waiting animate-pulse">
@@ -46,18 +55,28 @@ export function GameStatusBar({
       {status === 'playing' && turn && (
         <div className="flex flex-col items-center gap-1">
           <p className="status-turn">
-            <span style={{ color: turn === 'X' ? 'var(--x-color)' : 'var(--o-color)' }}>
+            <span
+              style={{
+                color: turn === 'X' ? 'var(--x-color)' : 'var(--o-color)',
+              }}
+            >
               {players[turn] || turn}
             </span>
             {isMyTurn ? (
-              <span className="text-foreground/50 text-base font-normal" style={{ fontFamily: 'Space Mono', fontSize: '0.75rem', marginLeft: '0.5rem', letterSpacing: '0.1em' }}>
+              <span
+                className="status-hint"
+                style={{ marginLeft: '0.5rem', opacity: 0.5 }}
+              >
                 — TON TOUR
               </span>
-            ) : !isSpectator ? (
-              <span className="text-foreground/30 text-base font-normal" style={{ fontFamily: 'Space Mono', fontSize: '0.75rem', marginLeft: '0.5rem', letterSpacing: '0.1em' }}>
+            ) : isSpectator ? null : (
+              <span
+                className="status-hint"
+                style={{ marginLeft: '0.5rem', opacity: 0.3 }}
+              >
                 joue...
               </span>
-            ) : null}
+            )}
           </p>
         </div>
       )}
@@ -69,26 +88,93 @@ export function GameStatusBar({
               MATCH NUL
             </p>
           ) : (
-            <p className="status-winner" style={{ color: winner === 'X' ? 'var(--x-color)' : 'var(--o-color)' }}>
+            <p
+              className="status-winner"
+              style={{
+                color: winner === 'X' ? 'var(--x-color)' : 'var(--o-color)',
+              }}
+            >
               {players[winner] || winner} GAGNE
             </p>
           )}
           {!isSpectator && (
-            <button
-              type="button"
-              onClick={onRematch}
-              className="game-btn game-btn--ghost"
-            >
-              REVANCHE
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              {opponentVoted && !iVoted && (
+                <p
+                  className="font-mono text-[0.6rem] tracking-widest animate-pulse"
+                  style={{
+                    color:
+                      opponentMark === 'X'
+                        ? 'var(--x-color)'
+                        : 'var(--o-color)',
+                  }}
+                >
+                  {players[opponentMark!] || opponentMark} veut rejouer !
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={iVoted ? undefined : onRematch}
+                disabled={iVoted}
+                className="font-mono text-[0.7rem] tracking-[0.12em] border-2 bg-transparent transition-all duration-150 px-5 py-3.5 leading-none"
+                style={
+                  iVoted
+                    ? {
+                        borderColor: 'var(--border)',
+                        color: 'var(--text-light)',
+                        cursor: 'default',
+                        opacity: 0.5,
+                      }
+                    : {
+                        borderColor: 'var(--border)',
+                        color: 'var(--muted-foreground)',
+                        cursor: 'pointer',
+                      }
+                }
+                onMouseEnter={
+                  iVoted
+                    ? undefined
+                    : (e) => {
+                        ;(
+                          e.currentTarget as HTMLButtonElement
+                        ).style.borderColor = '#3A3A3A'
+                        ;(e.currentTarget as HTMLButtonElement).style.color =
+                          'var(--foreground)'
+                      }
+                }
+                onMouseLeave={
+                  iVoted
+                    ? undefined
+                    : (e) => {
+                        ;(
+                          e.currentTarget as HTMLButtonElement
+                        ).style.borderColor = 'var(--border)'
+                        ;(e.currentTarget as HTMLButtonElement).style.color =
+                          'var(--muted-foreground)'
+                      }
+                }
+              >
+                {iVoted ? 'EN ATTENTE...' : 'REVANCHE'}
+              </button>
+              {iVoted && !opponentVoted && (
+                <p
+                  className="font-mono text-[0.6rem] tracking-[0.1em]"
+                  style={{ color: 'var(--text-light)', opacity: 0.5 }}
+                >
+                  En attente de {players[opponentMark!] || opponentMark}
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}
 
       {spectatorCount > 0 && (
-        <p className="label-mono flex items-center gap-1.5" style={{ marginTop: status === 'waiting' ? 0 : undefined }}>
-          <span>👁</span>
-          <span>{spectatorCount} SPECTATEUR{spectatorCount > 1 ? 'S' : ''}</span>
+        <p className="label-mono flex items-center gap-1.5">
+          <Eye size={11} />
+          <span>
+            {spectatorCount} SPECTATEUR{spectatorCount > 1 ? 'S' : ''}
+          </span>
         </p>
       )}
     </div>

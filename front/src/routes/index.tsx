@@ -1,6 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { ArrowRight, Eye, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
+
 import { createRoom, joinRoom } from '../api/game.api'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label.tsx'
 import { useGameStore } from '../store/useGameStore'
 
 export const Route = createFileRoute('/')({
@@ -21,18 +26,25 @@ function HomePage() {
   const setIdentity = useGameStore((s) => s.setIdentity)
   const setRoom = useGameStore((s) => s.setRoom)
 
-  const [pseudo, setPseudo] = useState('')
+  const [pseudo, setPseudo] = useState(
+    () => localStorage.getItem('ttt-pseudo') ?? '',
+  )
   const [joinCode, setJoinCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [playerId] = useState(() => getOrCreatePlayerId())
 
   const handleCreate = async () => {
-    if (!pseudo.trim()) { setError('Saisis un pseudo'); return }
+    if (!pseudo.trim()) {
+      setError('Saisis un pseudo')
+      return
+    }
     setLoading(true)
     setError('')
     try {
       const { roomCode } = await createRoom(pseudo.trim(), playerId)
+      localStorage.setItem('ttt-pseudo', pseudo.trim())
+      localStorage.setItem('ttt-room-role', 'X')
       setIdentity(pseudo.trim(), playerId)
       setRoom(roomCode, 'X')
       await navigate({ to: '/room/$code', params: { code: roomCode } })
@@ -44,12 +56,24 @@ function HomePage() {
   }
 
   const handleJoin = async () => {
-    if (!pseudo.trim()) { setError('Saisis un pseudo'); return }
-    if (!joinCode.trim()) { setError('Saisis un code de room'); return }
+    if (!pseudo.trim()) {
+      setError('Saisis un pseudo')
+      return
+    }
+    if (!joinCode.trim()) {
+      setError('Saisis un code de room')
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      const data = await joinRoom(joinCode.trim().toUpperCase(), pseudo.trim(), playerId)
+      const data = await joinRoom(
+        joinCode.trim().toUpperCase(),
+        pseudo.trim(),
+        playerId,
+      )
+      localStorage.setItem('ttt-pseudo', pseudo.trim())
+      localStorage.setItem('ttt-room-role', data.role)
       setIdentity(pseudo.trim(), playerId)
       setRoom(data.roomCode, data.role)
       await navigate({ to: '/room/$code', params: { code: data.roomCode } })
@@ -61,11 +85,21 @@ function HomePage() {
   }
 
   const handleSpectate = async () => {
-    if (!joinCode.trim()) { setError('Saisis un code de room'); return }
+    if (!joinCode.trim()) {
+      setError('Saisis un code de room')
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      const data = await joinRoom(joinCode.trim().toUpperCase(), pseudo.trim() || 'Spectateur', playerId, true)
+      const data = await joinRoom(
+        joinCode.trim().toUpperCase(),
+        pseudo.trim() || 'Spectateur',
+        playerId,
+        true,
+      )
+      localStorage.setItem('ttt-pseudo', pseudo.trim() || 'Spectateur')
+      localStorage.setItem('ttt-room-role', 'spectator')
       setIdentity(pseudo.trim() || 'Spectateur', playerId)
       setRoom(data.roomCode, 'spectator')
       await navigate({ to: '/room/$code', params: { code: data.roomCode } })
@@ -77,56 +111,53 @@ function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ background: 'var(--background)' }}>
-
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-background">
       {/* Background decorative board */}
       <div
-        className="fixed inset-0 flex items-center justify-center pointer-events-none select-none"
+        className="fixed inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.025]"
         aria-hidden
-        style={{ opacity: 0.025 }}
       >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '6px',
-            background: '#fff',
-            padding: '6px',
-            width: 'min(80vw, 80vh)',
-            height: 'min(80vw, 80vh)',
-          }}
-        >
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} style={{ background: 'var(--background)' }} />
+        <div className="grid grid-cols-3 gap-1.5 bg-white p-1.5 w-[min(80vw,80vh)] h-[min(80vw,80vh)]">
+          {['c0','c1','c2','c3','c4','c5','c6','c7','c8'].map((id) => (
+            <div key={id} className="bg-background" />
           ))}
         </div>
       </div>
 
-      <div className="w-full max-w-xs relative z-10">
-
+      <div className="w-full max-w-md relative z-10">
         {/* Title */}
-        <div className="mb-10 appear-1">
+        <div className="mb-8 animate-appear-1">
           <h1
-            className="leading-none select-none"
-            style={{
-              fontFamily: 'Russo One, sans-serif',
-              fontSize: 'clamp(3.5rem, 15vw, 5rem)',
-              color: 'var(--foreground)',
-              letterSpacing: '-0.01em',
-            }}
+            className="font-display leading-none select-none text-foreground tracking-[-0.01em]"
+            style={{ fontSize: 'clamp(3.5rem, 15vw, 5rem)' }}
           >
-            TIC<br />
-            <span style={{ color: 'var(--x-color)' }}>TAC</span><br />
+            TIC
+            <br />
+            <span style={{ color: 'var(--x-color)' }}>TAC</span>
+            <br />
             TOE
           </h1>
-          <p className="label-mono mt-3">MULTIJOUEUR · TEMPS RÉEL · ANONYME</p>
+          <p className="label-mono mt-3">
+            MULTIJOUEUR · TEMPS RÉEL · STRATÉGIE
+          </p>
         </div>
 
-        {/* Pseudo */}
-        <div className="mb-5 appear-2">
-          <label className="label-mono block mb-2">TON PSEUDO</label>
-          <input
-            className="game-input"
+        {/* Identity — champ partagé entre créer et rejoindre */}
+        <div
+          className="animate-appear-2 mb-4 p-4"
+          style={{
+            background: 'var(--board-cell)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <Label
+            className="label-mono block mb-2"
+            style={{ color: 'var(--text-light)' }}
+          >
+            TON PSEUDO
+          </Label>
+          <Input
+            variant="game"
             placeholder="Entrer un pseudo…"
             value={pseudo}
             maxLength={20}
@@ -135,71 +166,80 @@ function HomePage() {
           />
         </div>
 
-        {/* Create button */}
-        <div className="mb-8 appear-3">
-          <button
-            type="button"
-            className="game-btn game-btn--primary w-full"
-            onClick={handleCreate}
-            disabled={loading}
+        {/* Actions — deux blocs côte à côte */}
+        <div className="grid grid-cols-2 gap-2 animate-appear-3">
+          {/* Créer */}
+          <div
+            className="p-4 flex flex-col justify-between gap-4"
+            style={{ border: '1px solid var(--border)' }}
           >
-            {loading ? '…' : 'CRÉER UNE PARTIE →'}
-          </button>
-        </div>
+            <span className="label-mono" style={{ color: 'var(--text-light)' }}>
+              NOUVELLE PARTIE
+            </span>
+            <Button
+              type="button"
+              variant="game-primary"
+              className="w-full"
+              onClick={handleCreate}
+              disabled={loading}
+            >
+              {loading ? (
+                '…'
+              ) : (
+                <>
+                  <span>CRÉER</span>
+                  <ArrowRight size={13} />
+                </>
+              )}
+            </Button>
+          </div>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 mb-6 appear-4">
-          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-          <span className="label-mono">OU</span>
-          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-        </div>
-
-        {/* Join code */}
-        <div className="mb-4 appear-4">
-          <label className="label-mono block mb-2">CODE DE ROOM</label>
-          <input
-            className="game-input game-input--mono"
-            placeholder="ABC123"
-            value={joinCode}
-            maxLength={6}
-            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-          />
-        </div>
-
-        {/* Join + Spectate */}
-        <div className="flex gap-2 appear-5">
-          <button
-            type="button"
-            className="game-btn game-btn--danger flex-1"
-            onClick={handleJoin}
-            disabled={loading}
+          {/* Rejoindre */}
+          <div
+            className="p-4 flex flex-col gap-3"
+            style={{ border: '1px solid var(--border)' }}
           >
-            REJOINDRE
-          </button>
-          <button
-            type="button"
-            className="game-btn game-btn--ghost"
-            onClick={handleSpectate}
-            disabled={loading}
-            title="Observer la partie"
-          >
-            👁 OBS.
-          </button>
+            <span className="label-mono" style={{ color: 'var(--text-light)' }}>
+              REJOINDRE
+            </span>
+            <Input
+              variant="game-mono"
+              placeholder="ABC123"
+              value={joinCode}
+              maxLength={6}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+            />
+            <div className="flex gap-1.5">
+              <Button
+                type="button"
+                variant="game-danger"
+                className="flex-1"
+                onClick={handleJoin}
+                disabled={loading}
+              >
+                {loading ? '…' : 'JOIN'}
+              </Button>
+              <Button
+                type="button"
+                variant="game-ghost"
+                onClick={handleSpectate}
+                disabled={loading}
+                title="Observer la partie"
+              >
+                <Eye size={13} />
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Error */}
         {error && (
           <p
-            className="mt-4 appear-1"
-            style={{
-              fontFamily: 'Space Mono, monospace',
-              fontSize: '0.7rem',
-              letterSpacing: '0.08em',
-              color: 'var(--secondary)',
-            }}
+            className="mt-4 animate-appear-1 label-mono flex items-center gap-1.5"
+            style={{ color: 'var(--secondary)' }}
           >
-            ⚠ {error.toUpperCase()}
+            <TriangleAlert size={12} /> {error.toUpperCase()}
           </p>
         )}
       </div>

@@ -5,6 +5,8 @@ export type Mark = 'X' | 'O'
 export type GameStatus = 'waiting' | 'playing' | 'finished'
 export type Role = Mark | 'spectator'
 
+export type MoveHistory = { X: number[]; O: number[] }
+
 export interface GameState {
   pseudo: string
   playerId: string
@@ -17,7 +19,9 @@ export interface GameState {
   spectatorCount: number
   winner: Mark | 'draw' | null
   winLine: number[]
+  moveHistory: MoveHistory
   disconnectedPlayer: { pseudo: string; secondsLeft: number } | null
+  rematchVotes: Mark[]
 }
 
 export interface GameActions {
@@ -28,15 +32,16 @@ export interface GameActions {
 }
 
 export type ServerMessage =
-  | { type: 'game:start'; board: string[]; turn: Mark; players: Record<Mark, string> }
-  | { type: 'game:update'; board: string[]; turn: Mark }
-  | { type: 'game:end'; winner: Mark | 'draw'; winLine: number[] }
-  | { type: 'game:rematch'; board: string[]; turn: Mark }
+  | { type: 'game:start'; board: string[]; turn: Mark; players: Record<Mark, string>; moveHistory: MoveHistory }
+  | { type: 'game:update'; board: string[]; turn: Mark; moveHistory: MoveHistory }
+  | { type: 'game:end'; winner: Mark | 'draw'; winLine: number[]; board: string[]; moveHistory: MoveHistory }
+  | { type: 'game:rematch'; board: string[]; turn: Mark; moveHistory: MoveHistory }
+  | { type: 'game:rematch_vote'; mark: Mark }
   | { type: 'player:disconnected'; pseudo: string; reconnectDelay: number }
   | { type: 'player:reconnected'; pseudo: string }
   | { type: 'player:abandoned'; pseudo: string }
   | { type: 'spectator:count'; count: number }
-  | { type: 'room:state'; board: string[]; turn: Mark; players: Record<Mark, string>; status: GameStatus; winner: Mark | 'draw' | null; spectatorCount: number }
+  | { type: 'room:state'; board: string[]; turn: Mark; players: Record<Mark, string>; status: GameStatus; winner: Mark | 'draw' | null; spectatorCount: number; moveHistory: MoveHistory }
   | { type: 'error'; message: string }
 
 const initialState: GameState = {
@@ -51,7 +56,9 @@ const initialState: GameState = {
   spectatorCount: 0,
   winner: null,
   winLine: [],
+  moveHistory: { X: [], O: [] },
   disconnectedPlayer: null,
+  rematchVotes: [],
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -66,16 +73,19 @@ export const useGameStore = create<GameState & GameActions>()(
       applyMessage: (msg) => {
         switch (msg.type) {
           case 'game:start':
-            set({ board: msg.board, turn: msg.turn, players: msg.players as { X: string; O: string }, status: 'playing' })
+            set({ board: msg.board, turn: msg.turn, players: msg.players as { X: string; O: string }, status: 'playing', moveHistory: msg.moveHistory })
             break
           case 'game:update':
-            set({ board: msg.board, turn: msg.turn, disconnectedPlayer: null })
+            set({ board: msg.board, turn: msg.turn, moveHistory: msg.moveHistory, disconnectedPlayer: null })
             break
           case 'game:end':
-            set({ winner: msg.winner, winLine: msg.winLine, status: 'finished' })
+            set({ board: msg.board, winner: msg.winner, winLine: msg.winLine, status: 'finished', moveHistory: msg.moveHistory, rematchVotes: [] })
+            break
+          case 'game:rematch_vote':
+            set((s) => ({ rematchVotes: s.rematchVotes.includes(msg.mark) ? s.rematchVotes : [...s.rematchVotes, msg.mark] }))
             break
           case 'game:rematch':
-            set({ board: msg.board, turn: msg.turn, status: 'playing', winner: null, winLine: [], disconnectedPlayer: null })
+            set({ board: msg.board, turn: msg.turn, status: 'playing', winner: null, winLine: [], moveHistory: msg.moveHistory, disconnectedPlayer: null, rematchVotes: [] })
             break
           case 'player:disconnected':
             set({ disconnectedPlayer: { pseudo: msg.pseudo, secondsLeft: msg.reconnectDelay } })
@@ -97,6 +107,7 @@ export const useGameStore = create<GameState & GameActions>()(
               status: msg.status,
               winner: msg.winner,
               spectatorCount: msg.spectatorCount,
+              moveHistory: msg.moveHistory,
             })
             break
           case 'error':

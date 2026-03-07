@@ -25,6 +25,12 @@ const buttonVariants = cva(
           'text-primary bg-transparent border-none shadow-none p-0 focus-visible:ring-0',
         absolute:
           'absolute right-2 text-primary bg-transparent border-none shadow-none p-0 hover:bg-primary/20',
+        'game-primary':
+          'font-display text-[0.9rem] tracking-[0.06em] bg-primary text-black h-auto px-5 py-3.5 leading-none rounded-none border-0 shadow-none hover:bg-primary-light hover:-translate-y-px active:translate-y-0 disabled:opacity-[0.45] transition-all',
+        'game-danger':
+          'font-display text-[0.9rem] tracking-[0.06em] bg-secondary text-white h-auto px-5 py-3.5 leading-none rounded-none border-0 shadow-none hover:bg-[#ff6070] hover:-translate-y-px disabled:opacity-[0.45] transition-all',
+        'game-ghost':
+          'font-mono text-[0.7rem] tracking-[0.12em] text-muted-foreground border-2 border-border bg-transparent h-auto px-5 py-3.5 leading-none rounded-none shadow-none hover:border-[#3A3A3A] hover:text-foreground disabled:opacity-[0.45] transition-all',
       },
       size: {
         default: 'h-9 px-4 py-2',

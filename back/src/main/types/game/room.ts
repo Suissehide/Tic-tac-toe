@@ -26,21 +26,25 @@ export interface Room {
   status: GameStatus
   winner: Mark | 'draw' | null
   winLine: number[] | null
+  moveHistory: { X: number[]; O: number[] }
   reconnectTimers: Map<string, ReturnType<typeof setTimeout>>
   rematchVotes: Set<string>
   cleanupTimer: ReturnType<typeof setTimeout> | null
 }
 
+export type MoveHistory = { X: number[]; O: number[] }
+
 export type ServerMessage =
-  | { type: 'game:start'; board: Board; turn: Mark; players: Record<Mark, string> }
-  | { type: 'game:update'; board: Board; turn: Mark }
-  | { type: 'game:end'; winner: Mark | 'draw'; winLine: number[] }
-  | { type: 'game:rematch'; board: Board; turn: Mark }
+  | { type: 'game:start'; board: Board; turn: Mark; players: Record<Mark, string>; moveHistory: MoveHistory }
+  | { type: 'game:update'; board: Board; turn: Mark; moveHistory: MoveHistory }
+  | { type: 'game:end'; winner: Mark | 'draw'; winLine: number[]; board: Board; moveHistory: MoveHistory }
+  | { type: 'game:rematch'; board: Board; turn: Mark; moveHistory: MoveHistory }
+  | { type: 'game:rematch_vote'; mark: Mark }
   | { type: 'player:disconnected'; pseudo: string; reconnectDelay: number }
   | { type: 'player:reconnected'; pseudo: string }
   | { type: 'player:abandoned'; pseudo: string }
   | { type: 'spectator:count'; count: number }
-  | { type: 'room:state'; board: Board; turn: Mark; players: Record<Mark, string>; status: GameStatus; winner: Mark | 'draw' | null; spectatorCount: number }
+  | { type: 'room:state'; board: Board; turn: Mark; players: Record<Mark, string>; status: GameStatus; winner: Mark | 'draw' | null; spectatorCount: number; moveHistory: MoveHistory }
   | { type: 'error'; message: string }
 
 export type ClientMessage =

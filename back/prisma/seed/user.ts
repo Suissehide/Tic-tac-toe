@@ -15,7 +15,6 @@ export default async function seedUsers(prisma: PrismaClient) {
   console.log('→ Seeding users...')
 
   const adminPass = hashPassword('Admin123!')
-  const userPass = hashPassword('User123!')
 
   await prisma.user.createMany({
     data: [
@@ -25,14 +24,6 @@ export default async function seedUsers(prisma: PrismaClient) {
         salt: adminPass.salt,
         firstName: 'Léo',
         lastName: 'Couffinhal',
-        role: Role.ADMIN,
-      },
-      {
-        email: 'sabrina.bernadet@example.com',
-        password: userPass.hash,
-        salt: userPass.salt,
-        firstName: 'Sabrina',
-        lastName: 'Bernadet',
         role: Role.ADMIN,
       },
     ],

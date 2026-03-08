@@ -1,79 +1,44 @@
-import type { FastifyPluginAsync } from 'fastify'
 import type { WebSocket } from '@fastify/websocket'
-import { roomStore } from '../../../../../infra/room-store'
-import type { Room, Player, Mark, ClientMessage } from '../../../../../types/game/room'
-import { checkWin, nextTurn, createBoard } from '../../../../../utils/game'
+import type { FastifyPluginCallback } from 'fastify'
 
-export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
+import { roomStore } from '../../../../../infra/room-store'
+import type {
+  ClientMessage,
+  Mark,
+  Player,
+  Room,
+} from '../../../../../types/game/room'
+import { checkWin, createBoard, nextTurn } from '../../../../../utils/game'
+
+export const wsRoomRouter: FastifyPluginCallback = (fastify) => {
   fastify.get<{
     Params: { code: string }
     Querystring: { playerId?: string; pseudo?: string; spectator?: string }
-  }>(
-    '/:code/ws',
-    { websocket: true },
-    (socket: WebSocket, request) => {
-      const { code } = request.params
-      const { playerId, pseudo, spectator } = request.query
+  }>('/:code/ws', { websocket: true }, (socket: WebSocket, request) => {
+    const { code } = request.params
+    const { playerId, pseudo, spectator } = request.query
 
-      const room = roomStore.getRoom(code)
-      if (!room) {
-        socket.close(4004, 'Room not found')
-        return
-      }
+    const room = roomStore.getRoom(code)
+    if (!room) {
+      socket.close(4004, 'Room not found')
+      return
+    }
 
-      // Spectator connection
-      if (spectator === 'true') {
-        const specId = playerId || crypto.randomUUID()
-        room.spectators.push({ id: specId, ws: socket })
-        roomStore.broadcast(room, { type: 'spectator:count', count: room.spectators.length })
-        roomStore.send(socket, {
-          type: 'room:state',
-          board: room.board,
-          turn: room.currentTurn,
-          players: Object.fromEntries(room.players.map((p) => [p.mark, p.pseudo])),
-          status: room.status,
-          winner: room.winner,
-          spectatorCount: room.spectators.length,
-          moveHistory: room.moveHistory,
-          scores: room.scores,
-        })
-
-        socket.on('close', () => {
-          room.spectators = room.spectators.filter((s) => s.id !== specId)
-          roomStore.broadcast(room, { type: 'spectator:count', count: room.spectators.length })
-        })
-        return
-      }
-
-      // Player connection
-      if (!playerId || !pseudo) {
-        socket.close(4001, 'Missing playerId or pseudo')
-        return
-      }
-
-      const player = room.players.find((p) => p.id === playerId)
-      if (!player) {
-        socket.close(4003, 'Not registered in this room')
-        return
-      }
-
-      // Reconnection: clear timer, update ws
-      roomStore.clearReconnectTimer(room, playerId)
-      const wasDisconnected = !player.connected
-      player.ws = socket
-      player.connected = true
-      player.pseudo = pseudo
-
-      if (wasDisconnected && room.status === 'playing') {
-        roomStore.broadcast(room, { type: 'player:reconnected', pseudo: player.pseudo })
-      }
-
-      // Broadcast current game state to all connected players (so existing players see new/updated names)
+    // Spectator connection
+    if (spectator === 'true') {
+      const specId = playerId || crypto.randomUUID()
+      room.spectators.push({ id: specId, ws: socket })
       roomStore.broadcast(room, {
+        type: 'spectator:count',
+        count: room.spectators.length,
+      })
+      roomStore.send(socket, {
         type: 'room:state',
         board: room.board,
         turn: room.currentTurn,
-        players: Object.fromEntries(room.players.map((p) => [p.mark, p.pseudo])),
+        players: Object.fromEntries(
+          room.players.map((p) => [p.mark, p.pseudo]),
+        ),
         status: room.status,
         winner: room.winner,
         spectatorCount: room.spectators.length,
@@ -81,77 +46,152 @@ export const wsRoomRouter: FastifyPluginAsync = async (fastify) => {
         scores: room.scores,
       })
 
-      // Start game when both players are connected
-      if (
-        room.status === 'waiting' &&
-        room.players.length === 2 &&
-        room.players.every((p) => p.connected)
-      ) {
-        room.status = 'playing'
-        const players = Object.fromEntries(room.players.map((p) => [p.mark, p.pseudo])) as Record<Mark, string>
-        roomStore.broadcast(room, { type: 'game:start', board: room.board, turn: room.currentTurn, players, moveHistory: room.moveHistory, scores: room.scores })
+      socket.on('close', () => {
+        room.spectators = room.spectators.filter((s) => s.id !== specId)
+        roomStore.broadcast(room, {
+          type: 'spectator:count',
+          count: room.spectators.length,
+        })
+      })
+      return
+    }
+
+    // Player connection
+    if (!playerId || !pseudo) {
+      socket.close(4001, 'Missing playerId or pseudo')
+      return
+    }
+
+    const player = room.players.find((p) => p.id === playerId)
+    if (!player) {
+      socket.close(4003, 'Not registered in this room')
+      return
+    }
+
+    // Reconnection: clear timer, update ws
+    roomStore.clearReconnectTimer(room, playerId)
+    const wasDisconnected = !player.connected
+    player.ws = socket
+    player.connected = true
+    player.pseudo = pseudo
+
+    if (wasDisconnected && room.status === 'playing') {
+      roomStore.broadcast(room, {
+        type: 'player:reconnected',
+        pseudo: player.pseudo,
+      })
+    }
+
+    // Broadcast current game state to all connected players (so existing players see new/updated names)
+    roomStore.broadcast(room, {
+      type: 'room:state',
+      board: room.board,
+      turn: room.currentTurn,
+      players: Object.fromEntries(room.players.map((p) => [p.mark, p.pseudo])),
+      status: room.status,
+      winner: room.winner,
+      spectatorCount: room.spectators.length,
+      moveHistory: room.moveHistory,
+      scores: room.scores,
+    })
+
+    // Start game when both players are connected
+    if (
+      room.status === 'waiting' &&
+      room.players.length === 2 &&
+      room.players.every((p) => p.connected)
+    ) {
+      room.status = 'playing'
+      const players = Object.fromEntries(
+        room.players.map((p) => [p.mark, p.pseudo]),
+      ) as Record<Mark, string>
+      roomStore.broadcast(room, {
+        type: 'game:start',
+        board: room.board,
+        turn: room.currentTurn,
+        players,
+        moveHistory: room.moveHistory,
+        scores: room.scores,
+      })
+    }
+
+    socket.on('message', (raw: Buffer) => {
+      let msg: ClientMessage
+      try {
+        msg = JSON.parse(raw.toString())
+      } catch {
+        return
       }
 
-      socket.on('message', (raw: Buffer) => {
-        let msg: ClientMessage
-        try {
-          msg = JSON.parse(raw.toString())
-        } catch {
-          return
-        }
+      if (msg.type === 'ping') {
+        roomStore.send(socket, { type: 'pong' })
+        return
+      }
 
-        if (msg.type === 'ping') {
-          roomStore.send(socket, { type: 'pong' })
-          return
-        }
+      if (msg.type === 'game:move') {
+        handleMove(room, player, msg.index, socket)
+        return
+      }
 
-        if (msg.type === 'game:move') {
-          handleMove(room, player, msg.index, socket)
-          return
-        }
+      if (msg.type === 'game:rematch') {
+        handleRematch(room, player)
+        return
+      }
+    })
 
-        if (msg.type === 'game:rematch') {
-          handleRematch(room, player)
-          return
-        }
-      })
+    socket.on('close', () => {
+      player.connected = false
+      player.ws = null
 
-      socket.on('close', () => {
-        player.connected = false
-        player.ws = null
+      // If no opponent yet (waiting), remove room immediately
+      if (room.status === 'waiting') {
+        roomStore.deleteRoom(room.code)
+        return
+      }
 
-        // If no opponent yet (waiting), remove room immediately
-        if (room.status === 'waiting') {
-          roomStore.deleteRoom(room.code)
-          return
-        }
-
-        if (room.status === 'playing') {
+      if (room.status === 'playing') {
+        roomStore.broadcast(room, {
+          type: 'player:disconnected',
+          pseudo: player.pseudo,
+          reconnectDelay: 30,
+        })
+        roomStore.scheduleReconnect(room, player.id, () => {
+          const opponent = room.players.find((p) => p.id !== player.id)
+          room.status = 'finished'
           roomStore.broadcast(room, {
-            type: 'player:disconnected',
+            type: 'player:abandoned',
             pseudo: player.pseudo,
-            reconnectDelay: 30,
           })
-          roomStore.scheduleReconnect(room, player.id, () => {
-            const opponent = room.players.find((p) => p.id !== player.id)
-            room.status = 'finished'
-            roomStore.broadcast(room, { type: 'player:abandoned', pseudo: player.pseudo })
-            if (opponent) {
-              room.winner = opponent.mark
-              room.scores[opponent.mark]++
-              roomStore.broadcast(room, { type: 'game:end', winner: opponent.mark, winLine: [], board: room.board, moveHistory: room.moveHistory, scores: room.scores })
-            }
-            roomStore.scheduleCleanup(room)
-          })
-        }
-      })
-    },
-  )
+          if (opponent) {
+            room.winner = opponent.mark
+            room.scores[opponent.mark]++
+            roomStore.broadcast(room, {
+              type: 'game:end',
+              winner: opponent.mark,
+              winLine: [],
+              board: room.board,
+              moveHistory: room.moveHistory,
+              scores: room.scores,
+            })
+          }
+          roomStore.scheduleCleanup(room)
+        })
+      }
+    })
+  })
 }
 
-function handleMove(room: Room, player: Player, index: number, socket: WebSocket) {
+function handleMove(
+  room: Room,
+  player: Player,
+  index: number,
+  socket: WebSocket,
+) {
   if (room.status !== 'playing') {
-    roomStore.send(socket, { type: 'error', message: 'Game is not in progress' })
+    roomStore.send(socket, {
+      type: 'error',
+      message: 'Game is not in progress',
+    })
     return
   }
   if (room.currentTurn !== player.mark) {
@@ -160,7 +200,10 @@ function handleMove(room: Room, player: Player, index: number, socket: WebSocket
   }
   const opponent = room.players.find((p) => p.id !== player.id)
   if (opponent && !opponent.connected) {
-    roomStore.send(socket, { type: 'error', message: 'Waiting for opponent to reconnect' })
+    roomStore.send(socket, {
+      type: 'error',
+      message: 'Waiting for opponent to reconnect',
+    })
     return
   }
   if (index < 0 || index > 8 || room.board[index] !== '') {
@@ -184,18 +227,33 @@ function handleMove(room: Room, player: Player, index: number, socket: WebSocket
     room.winner = player.mark
     room.winLine = winLine
     room.scores[player.mark]++
-    roomStore.broadcast(room, { type: 'game:end', winner: player.mark, winLine, board: room.board, moveHistory: room.moveHistory, scores: room.scores })
+    roomStore.broadcast(room, {
+      type: 'game:end',
+      winner: player.mark,
+      winLine,
+      board: room.board,
+      moveHistory: room.moveHistory,
+      scores: room.scores,
+    })
     roomStore.scheduleCleanup(room)
     return
   }
 
   room.currentTurn = nextTurn(room.currentTurn)
-  roomStore.broadcast(room, { type: 'game:update', board: room.board, turn: room.currentTurn, moveHistory: room.moveHistory })
+  roomStore.broadcast(room, {
+    type: 'game:update',
+    board: room.board,
+    turn: room.currentTurn,
+    moveHistory: room.moveHistory,
+  })
 }
 
 function handleRematch(room: Room, player: Player) {
-  if (room.rematchVotes.has(player.id)) return
+  if (room.rematchVotes.has(player.id)) {
+    return
+  }
   room.rematchVotes.add(player.id)
+
   if (room.rematchVotes.size === 2) {
     room.board = createBoard()
     room.currentTurn = 'X'
@@ -208,7 +266,13 @@ function handleRematch(room: Room, player: Player) {
       clearTimeout(room.cleanupTimer)
       room.cleanupTimer = null
     }
-    roomStore.broadcast(room, { type: 'game:rematch', board: room.board, turn: room.currentTurn, moveHistory: room.moveHistory, scores: room.scores })
+    roomStore.broadcast(room, {
+      type: 'game:rematch',
+      board: room.board,
+      turn: room.currentTurn,
+      moveHistory: room.moveHistory,
+      scores: room.scores,
+    })
   } else {
     roomStore.broadcast(room, { type: 'game:rematch_vote', mark: player.mark })
   }

@@ -2,11 +2,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 import { authRouter } from './auth'
 import { healthcheckRouter } from './healthcheck'
-import { userRouter } from './user'
 import { roomsRouter } from './rooms'
+import { userRouter } from './user'
 
 const routes: FastifyPluginAsyncZod = async (fastify) => {
-  fastify.get('/', async () => {
+  fastify.get('/', () => {
     return { name: 'API', status: 'running' }
   })
 

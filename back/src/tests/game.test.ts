@@ -1,38 +1,44 @@
-import { checkWin, checkDraw, generateRoomCode, createBoard, nextTurn } from './game'
-import type { Board } from '../types/game/room'
+import type { Board } from '../main/types/game/room'
+import {
+  checkDraw,
+  checkWin,
+  createBoard,
+  generateRoomCode,
+  nextTurn,
+} from '../main/utils/game'
 
 describe('createBoard', () => {
   it('creates a 9-element empty board', () => {
-    expect(createBoard()).toEqual(['','','','','','','','',''])
+    expect(createBoard()).toEqual(['', '', '', '', '', '', '', '', ''])
   })
 })
 
 describe('checkWin', () => {
   it('detects horizontal win on row 0', () => {
-    const board = ['X','X','X','','','','','',''] as Board
+    const board = ['X', 'X', 'X', '', '', '', '', '', ''] as Board
     expect(checkWin(board, 'X')).toEqual([0, 1, 2])
   })
   it('detects vertical win on col 1', () => {
-    const board = ['','X','','','X','','','X',''] as Board
+    const board = ['', 'X', '', '', 'X', '', '', 'X', ''] as Board
     expect(checkWin(board, 'X')).toEqual([1, 4, 7])
   })
   it('detects diagonal win', () => {
-    const board = ['X','','','','X','','','','X'] as Board
+    const board = ['X', '', '', '', 'X', '', '', '', 'X'] as Board
     expect(checkWin(board, 'X')).toEqual([0, 4, 8])
   })
   it('returns null when no win', () => {
-    const board = ['X','O','X','','','','','',''] as Board
+    const board = ['X', 'O', 'X', '', '', '', '', '', ''] as Board
     expect(checkWin(board, 'X')).toBeNull()
   })
 })
 
 describe('checkDraw', () => {
   it('returns true when board full and no winner', () => {
-    const board = ['X','O','X','X','O','X','O','X','O'] as Board
+    const board = ['X', 'O', 'X', 'X', 'O', 'X', 'O', 'X', 'O'] as Board
     expect(checkDraw(board)).toBe(true)
   })
   it('returns false when board not full', () => {
-    const board = ['X','O','X','','','','','',''] as Board
+    const board = ['X', 'O', 'X', '', '', '', '', '', ''] as Board
     expect(checkDraw(board)).toBe(false)
   })
 })

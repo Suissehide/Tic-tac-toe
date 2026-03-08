@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
+
 import { createRoomRouter } from './create.router'
 import { joinRoomRouter } from './join.router'
 import { wsRoomRouter } from './ws.router'

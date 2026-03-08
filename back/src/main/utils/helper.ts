@@ -56,7 +56,6 @@ export const normalizePhone = (phone: string): string => {
   return `+33${withoutPrefix}`
 }
 
-
 type PickNullable<T> = {
   [P in keyof T as null extends T[P] ? P : never]: T[P]
 }

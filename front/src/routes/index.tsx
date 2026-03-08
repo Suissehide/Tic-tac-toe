@@ -118,7 +118,7 @@ function HomePage() {
         aria-hidden
       >
         <div className="grid grid-cols-3 gap-1.5 bg-white p-1.5 w-[min(80vw,80vh)] h-[min(80vw,80vh)]">
-          {['c0','c1','c2','c3','c4','c5','c6','c7','c8'].map((id) => (
+          {['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'].map((id) => (
             <div key={id} className="bg-background" />
           ))}
         </div>
@@ -127,13 +127,10 @@ function HomePage() {
       <div className="w-full max-w-md relative z-10">
         {/* Title */}
         <div className="mb-8 animate-appear-1">
-          <h1
-            className="font-display leading-none select-none text-foreground tracking-[-0.01em]"
-            style={{ fontSize: 'clamp(3.5rem, 15vw, 5rem)' }}
-          >
+          <h1 className="font-display leading-none select-none text-foreground tracking-[-0.01em] text-[clamp(3.5rem,15vw,5rem)]">
             TIC
             <br />
-            <span style={{ color: 'var(--x-color)' }}>TAC</span>
+            <span className="text-x">TAC</span>
             <br />
             TOE
           </h1>
@@ -143,17 +140,8 @@ function HomePage() {
         </div>
 
         {/* Identity — champ partagé entre créer et rejoindre */}
-        <div
-          className="animate-appear-2 mb-4 p-4"
-          style={{
-            background: 'var(--board-cell)',
-            border: '1px solid var(--border)',
-          }}
-        >
-          <Label
-            className="label-mono block mb-2"
-            style={{ color: 'var(--text-light)' }}
-          >
+        <div className="animate-appear-2 mb-4 p-4 bg-board-cell border border-border">
+          <Label className="label-mono block mb-2 text-text-light">
             TON PSEUDO
           </Label>
           <Input
@@ -169,13 +157,8 @@ function HomePage() {
         {/* Actions — deux blocs côte à côte */}
         <div className="grid grid-cols-2 gap-2 animate-appear-3">
           {/* Créer */}
-          <div
-            className="p-4 flex flex-col justify-between gap-4"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            <span className="label-mono" style={{ color: 'var(--text-light)' }}>
-              NOUVELLE PARTIE
-            </span>
+          <div className="p-4 flex flex-col justify-between gap-4 bg-board-cell border border-border">
+            <span className="label-mono">NOUVELLE PARTIE</span>
             <Button
               type="button"
               variant="game-primary"
@@ -195,13 +178,8 @@ function HomePage() {
           </div>
 
           {/* Rejoindre */}
-          <div
-            className="p-4 flex flex-col gap-3"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            <span className="label-mono" style={{ color: 'var(--text-light)' }}>
-              REJOINDRE
-            </span>
+          <div className="p-4 flex flex-col gap-3 bg-board-cell border border-border">
+            <span className="label-mono">REJOINDRE</span>
             <Input
               variant="game-mono"
               placeholder="ABC123"
@@ -235,10 +213,7 @@ function HomePage() {
 
         {/* Error */}
         {error && (
-          <p
-            className="mt-4 animate-appear-1 label-mono flex items-center gap-1.5"
-            style={{ color: 'var(--secondary)' }}
-          >
+          <p className="mt-4 animate-appear-1 label-mono flex items-center gap-1.5 text-secondary">
             <TriangleAlert size={12} /> {error.toUpperCase()}
           </p>
         )}

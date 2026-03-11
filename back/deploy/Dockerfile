@@ -15,7 +15,8 @@ WORKDIR /usr/src/app
 COPY ../package.json package-lock.json .npmrc ./
 RUN npm ci --prefer-offline --include=dev --ignore-scripts --loglevel verbose
 
-COPY ../.swcrc tsconfig.json ./
+COPY ../.swcrc tsconfig.json prisma.config.ts ./
+COPY ../prisma ./prisma
 COPY ../src ./src
 
 RUN npm run build

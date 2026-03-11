@@ -1,7 +1,7 @@
 services:
   back:
     build:
-      context: ./back
+      context: ../back
       dockerfile: deploy/Dockerfile
       target: app
     image: ${APP_IMAGE_NAME}-back:${VERSION:-latest}
@@ -21,7 +21,7 @@ services:
 
   front:
     build:
-      context: ./front
+      context: ../front
       dockerfile: deploy/Dockerfile
     image: ${APP_IMAGE_NAME}-front:${VERSION:-latest}
     environment:

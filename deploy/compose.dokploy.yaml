@@ -10,14 +10,20 @@ services:
         MIRROR_URL: ${MIRROR_URL}
     image: ${APP_IMAGE_NAME}-back:${VERSION:-latest}
     environment:
+      - CORS_ORIGIN
       - DATABASE_URL
-      - PORT
       - HOST
       - JWT_SECRET
       - JWT_REFRESH_SECRET
-      - FRONT_URL
-      - CORS_ORIGIN
+      - JWT_EXPIRES_IN
+      - JWT_REFRESH_EXPIRES_IN
+      - COOKIE_SECRET
+      - LOG_LEVEL
+      - NODE_CLUSTER
       - NODE_ENV=production
+      - NODE_TLS_REJECT_UNAUTHORIZED
+      - PORT
+      - FRONT_URL
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,9 +34,10 @@ services:
       context: ../front
       dockerfile: deploy/Dockerfile
       args:
+        DATABASE_URL: ${DATABASE_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
         NODE_VERSION: ${NODE_VERSION}
         NPM_VERSION: ${NPM_VERSION}
-        MIRROR_URL: ${MIRROR_URL}
     image: ${APP_IMAGE_NAME}-front:${VERSION:-latest}
     environment:
       - VITE_API_BASE_URL

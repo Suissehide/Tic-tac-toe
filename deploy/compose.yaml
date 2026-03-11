@@ -8,11 +8,11 @@ services:
     build:
       context: ../back
       dockerfile: deploy/Dockerfile
+      target: app
       args:
         DATABASE_URL: ${DATABASE_URL}
         NODE_VERSION: ${NODE_VERSION}
         NPM_VERSION: ${NPM_VERSION}
-      target: app
     image: "${CONTAINER_REGISTRY_PREFIX}${APP_IMAGE_NAME}-back:${VERSION:-latest}"
     container_name: "${APP_IMAGE_NAME}-back"
     ports:

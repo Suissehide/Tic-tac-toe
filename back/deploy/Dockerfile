@@ -13,7 +13,7 @@ FROM node-npm AS app-build
 WORKDIR /usr/src/app
 
 COPY ../package.json package-lock.json .npmrc ./
-RUN npm ci --prefer-offline --include=dev --ignore-scripts --loglevel verbose
+RUN npm ci --prefer-offline --include=dev --loglevel verbose
 
 COPY ../.swcrc tsconfig.json prisma.config.ts ./
 COPY ../prisma ./prisma

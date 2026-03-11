@@ -1,5 +1,10 @@
-import dayjs from 'dayjs'
 import type { Row } from '@tanstack/react-table'
+import dayjs from 'dayjs'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+
+dayjs.extend(isSameOrAfter)
+dayjs.extend(isSameOrBefore)
 
 export const textFilterFn = <T>(
   row: Row<T>,

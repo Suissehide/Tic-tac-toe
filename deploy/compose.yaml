@@ -17,8 +17,6 @@ services:
     container_name: "${APP_IMAGE_NAME}-back"
     ports:
       - '${PORT}:${PORT}'
-    profiles:
-      - backend
     healthcheck:
       test: node -e "require('http').get({hostname:'localhost', port:${PORT}, path:'/health', timeout:3000})"
       retries: 3
@@ -43,7 +41,6 @@ services:
       - "traefik.http.routers.${APP_IMAGE_NAME}-back.rule=Host(`${TRAEFIK_BACK_HOST}`)"
       - "traefik.http.routers.${APP_IMAGE_NAME}-back.entrypoints=https"
       - "traefik.http.routers.${APP_IMAGE_NAME}-back.tls=true"
-      - "traefik.http.routers.${APP_IMAGE_NAME}-back.tls.certresolver=ovh"
       - "traefik.http.services.${APP_IMAGE_NAME}-back.loadbalancer.server.port=${PORT}"
     networks:
       - proxy
@@ -63,8 +60,6 @@ services:
         NPM_VERSION: ${NPM_VERSION}
     image: "${CONTAINER_REGISTRY_PREFIX}${APP_IMAGE_NAME}-front:${VERSION:-latest}"
     container_name: "${APP_IMAGE_NAME}-front"
-    profiles:
-      - frontend
     environment:
       - VITE_API_BASE_URL
       - VITE_ENVIRONMENT
@@ -74,7 +69,6 @@ services:
       - "traefik.http.routers.${APP_IMAGE_NAME}-front.rule=Host(`${TRAEFIK_FRONT_HOST}`)"
       - "traefik.http.routers.${APP_IMAGE_NAME}-front.entrypoints=https"
       - "traefik.http.routers.${APP_IMAGE_NAME}-front.tls=true"
-      - "traefik.http.routers.${APP_IMAGE_NAME}-front.tls.certresolver=ovh"
       - "traefik.http.services.${APP_IMAGE_NAME}-front.loadbalancer.server.port=80"
     networks:
       - proxy
@@ -83,8 +77,6 @@ services:
   postgres:
     container_name: "${APP_IMAGE_NAME}-postgres"
     image: postgres:16.2-alpine
-    profiles:
-      - db
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $POSTGRES_DB_NAME -U postgres"]
     networks:
@@ -94,8 +86,6 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB_NAME}
-    ports:
-      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres:/var/lib/postgresql/data
 

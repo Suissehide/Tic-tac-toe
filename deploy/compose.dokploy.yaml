@@ -1,0 +1,45 @@
+services:
+  back:
+    build:
+      context: ./back
+      dockerfile: deploy/Dockerfile
+      target: app
+    image: ${APP_IMAGE_NAME}-back:${VERSION:-latest}
+    environment:
+      - DATABASE_URL
+      - PORT
+      - HOST
+      - JWT_SECRET
+      - JWT_REFRESH_SECRET
+      - FRONT_URL
+      - CORS_ORIGIN
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  front:
+    build:
+      context: ./front
+      dockerfile: deploy/Dockerfile
+    image: ${APP_IMAGE_NAME}-front:${VERSION:-latest}
+    environment:
+      - VITE_API_BASE_URL
+      - VITE_ENVIRONMENT
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB=${POSTGRES_DB_NAME}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+
+volumes:
+  postgres:

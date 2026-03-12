@@ -1,0 +1,61 @@
+services:
+  back:
+    build:
+      context: ../../back
+      dockerfile: ../../back/deploy/Dockerfile
+      target: app
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        NODE_VERSION: ${NODE_VERSION}
+        NPM_VERSION: ${NPM_VERSION}
+        MIRROR_URL: ${MIRROR_URL}
+    image: ${APP_IMAGE_NAME}-back:${VERSION:-latest}
+    environment:
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - DATABASE_URL=${DATABASE_URL}
+      - HOST=${HOST}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+      - COOKIE_SECRET=${COOKIE_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - NODE_CLUSTER=${NODE_CLUSTER}
+      - NODE_ENV=production
+      - NODE_TLS_REJECT_UNAUTHORIZED=${NODE_TLS_REJECT_UNAUTHORIZED}
+      - PORT=${PORT}
+      - FRONT_URL=${FRONT_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  front:
+    build:
+      context: ../../front
+      dockerfile: ../../front/deploy/Dockerfile
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        NODE_VERSION: ${NODE_VERSION}
+        NPM_VERSION: ${NPM_VERSION}
+    image: ${APP_IMAGE_NAME}-front:${VERSION:-latest}
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+      - VITE_ENVIRONMENT=${VITE_ENVIRONMENT}
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB_NAME}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+
+volumes:
+  postgres:

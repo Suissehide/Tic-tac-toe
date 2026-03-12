@@ -2,7 +2,7 @@ services:
   back:
     build:
       context: ../../back
-      dockerfile: ../../back/deploy/Dockerfile
+      dockerfile: deploy/Dockerfile
       target: app
       args:
         DATABASE_URL: ${DATABASE_URL}
@@ -33,7 +33,7 @@ services:
   front:
     build:
       context: ../../front
-      dockerfile: ../../front/deploy/Dockerfile
+      dockerfile: deploy/Dockerfile
       args:
         DATABASE_URL: ${DATABASE_URL}
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}

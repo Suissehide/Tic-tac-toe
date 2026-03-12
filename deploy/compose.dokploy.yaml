@@ -5,6 +5,7 @@ services:
       dockerfile: deploy/Dockerfile
       target: app
       args:
+        DATABASE_URL: ${DATABASE_URL}
         NODE_VERSION: ${NODE_VERSION}
         NPM_VERSION: ${NPM_VERSION}
         MIRROR_URL: ${MIRROR_URL}
